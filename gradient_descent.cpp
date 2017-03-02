@@ -1,3 +1,5 @@
+/*First impementation of gradient descent*/
+
 #include <iostream>
 #include <Eigen/Dense>
 #include <math.h>
@@ -8,6 +10,8 @@ using Eigen::Vector2d;
 vector<int> x = {1,2,3,4};
 vector<int> y = {6,5,7,10};
 
+// computes a new vector ab based on the summation of the derivatives with 
+// x and y subbed in from the training data
 Vector2d dL(Vector2d ab){
 	double da = 15*ab(0) + 5*ab(1) - 38.5;
 	double db = 2*ab(1) + 5*ab(0) - 14;
@@ -39,6 +43,7 @@ double dLdb(double a, double b){
 	return sum;
 }
 
+// computes a new vector by doing the summation over the training data 
 Vector2d dLs(Vector2d ab){
 	double a = dLda(ab(0),ab(1));
 	double b = dLdb(ab(0),ab(1));
@@ -72,7 +77,7 @@ x_new << 0,0;
 diff = x_old - x_new;
 double loss = 10000000;
 int i = 0;
-while((fabs(diff(0)) > precision || fabs(diff(1)) > precision) && i < 500000){
+while((fabs(diff(0)) > precision || fabs(diff(1)) > precision)){
     cout << "iteration: " << i++ << endl;
 	cout << "Loss " << loss << endl;
 	x_old = x_new;
