@@ -66,7 +66,7 @@ double Loss(double a, double b){
 
 int main(){
 // step size
-double gamma = .0001;
+double gamma = .001;
 // when |x_old - x_new| > precision we're there
 double precision = .000000001;
 Vector2d x_old, x_new, diff;
@@ -85,4 +85,5 @@ while((fabs(diff(0)) > precision || fabs(diff(1)) > precision)){
 	diff = x_old - x_new;
 	loss = Loss(x_new(0),x_new(1));
 }
+cout << "coefficients: " << endl << x_new << endl;
 }
