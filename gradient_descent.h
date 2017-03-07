@@ -30,4 +30,8 @@ class gradient_descent{
 
 		// does the actual work of fitting a function to the data
 		Vector2d fit(Vector2d ab, double gamma, double precision, bool verbose = false);
+
+		// a slightly different version of fit so that I don't have 
+		// to wrap the entire Eigen library for Cython
+		vector<double> py_fit(vector<int> ab, double gamma, double precision, bool verbose = false);
 };

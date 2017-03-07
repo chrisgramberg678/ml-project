@@ -73,3 +73,15 @@ Vector2d gradient_descent::fit(Vector2d ab, double gamma, double precision, bool
 	cout << "coefficients: " << endl << x_new << endl;
 	return x_new;
 }
+
+// a slightly different version of fit so that I don't have 
+// to wrap Eigen for Cython
+vector<double> gradient_descent::py_fit(vector<int> ab, double gamma, double precision, bool verbose){
+	Vector2d tmp;
+	tmp << ab[0], ab[1];
+	Vector2d result = fit(tmp,gamma,precision,verbose);
+	vector<double> r;
+	r.push_back(result(0));
+	r.push_back(result(1));
+	return r;
+}

@@ -10,4 +10,7 @@ int main(){
 	gradient_descent gd(x,y);
 	Vector2d res = gd.fit(ab,gamma,precision,true);
 	cout << "result " << endl << res << endl;
+	vector<int> ab2 = {0,0};
+	vector<double> r = gd.py_fit(ab2,gamma,precision,true);
+	cout << "result of cython friendly version " << endl << r[0] << endl << r[1] << endl;
 }
