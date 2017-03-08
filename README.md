@@ -17,4 +17,4 @@ And calling
 
 `gd.fit([start-x,start-y],step-size,precision)`
 
-will return the coeffecients which fint the line through the points.
+will return the coeffecients which fit the line through the points.
