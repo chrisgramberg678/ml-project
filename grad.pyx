@@ -22,5 +22,7 @@ cdef class PyGradient_Descent:
 		return np.array(list(_res))
 # simple test 
 def test():
-	gd = PyGradient_Descent([1,2,3,4],[6,5,7,10])
-	print (gd.fit([0,0],.001,.000000001))
+	xs = np.array([1,2,3,4])
+	ys = np.array([6,5,7,10])
+	gd = PyGradient_Descent(xs,ys)
+	print gd.fit([0,0],.001,.000000001)
