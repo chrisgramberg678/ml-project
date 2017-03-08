@@ -46,6 +46,10 @@ double gradient_descent::Loss(double a, double b){
 	return sum;
 }
 
+// default constructor to appease Cython
+gradient_descent::gradient_descent(){}
+
+// construction involves providing test data
 gradient_descent::gradient_descent(vector<int> n, vector<int> m):
 	x(n),
 	y(m)
@@ -63,14 +67,18 @@ Vector2d gradient_descent::fit(Vector2d ab, double gamma, double precision, bool
 	double loss = 10000000;
 	int i = 0;
 	while((fabs(diff(0)) > precision || fabs(diff(1)) > precision)){
-   		cout << "iteration: " << i++ << endl;
-		cout << "Loss " << loss << endl;
+		if(verbose){
+   			cout << "iteration: " << i++ << endl;
+			cout << "Loss " << loss << endl;
+		}
 		x_old = x_new;
 		x_new += -gamma*dL(x_old);
 		diff = x_old - x_new;
 		loss = Loss(x_new(0),x_new(1));
 	}
-	cout << "coefficients: " << endl << x_new << endl;
+	if(verbose){
+		cout << "coefficients: " << endl << x_new << endl;
+	}
 	return x_new;
 }
 

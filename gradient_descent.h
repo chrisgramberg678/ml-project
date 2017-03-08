@@ -25,6 +25,8 @@ class gradient_descent{
 		// we know this is working when the value of the loss function gets smaller
 		double Loss(double a, double b);
 	public:
+		// need a default constructor to appease Cython
+		gradient_descent();
 		// construction uses to vectors to represent data
 		gradient_descent(vector<int> n, vector<int> m);
 
