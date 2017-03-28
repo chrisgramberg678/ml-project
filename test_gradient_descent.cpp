@@ -40,6 +40,7 @@ int main(){
 	int bad = 0;
 	double error = .2;
 
+	// currently the tests will fail by diverging around i = 50
 	for(int i = 1; i < 100; ++i){
 		cout << "coefficients: " << i << endl;
 		MatrixXd x;
