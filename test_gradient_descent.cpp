@@ -1,16 +1,69 @@
+#include <stdlib.h>
+#include <time.h>
 #include "gradient_descent.h"
 
+VectorXd test_prep(MatrixXd& X, VectorXd& y, VectorXd& init, int coefficients, int points){
+	// create the specified number of coefficients and 
+	//stick them in a vector so we know the answer
+	VectorXd coefs(coefficients);
+	for(int i = 0; i < coefficients; ++i){
+		coefs(i) = (rand()%200 - 100)/10.0; // we want coeffecients in the range[-10,10]
+	}
+	// set X to be coefficients by data points
+	X.resize(coefficients,points);
+	// fill X with some random values between 1 and 10
+	for(int i = 0; i < coefficients; ++i){
+		for(int j = 0; j < points; ++j){
+			X(i,j) = rand() % 10;
+		}
+	}
+	// fill y with some values by multiplying X and the coefficients
+	// and adding some noise
+	y = coefs.transpose() * X;
+	for(int i = 0; i < points; ++i){
+		y(i) += (rand() % 200 - 100) / 100.0;
+	}
+	// set init to have the correct dimensions and set it to all 0's
+	init.resize(coefficients);
+	for(int i = 0; i < coefficients; ++i){
+		init(i) = 0;
+	}
+	return coefs;
+}
+
+
 int main(){
-	double gamma = .001;
-	double precision = .000000001;
-	vector<int> x = {1,2,3,4};
-	vector<int> y = {6,5,7,10};
-	Vector2d ab;
-	ab << 0,0;
-	gradient_descent gd(x,y);
-	Vector2d res = gd.fit(ab,gamma,precision,true);
-	cout << "result " << endl << res << endl;
-	vector<int> ab2 = {0,0};
-	vector<double> r = gd.py_fit(ab2,gamma,precision,true);
-	cout << "result of cython friendly version " << endl << r[0] << endl << r[1] << endl;
+	srand(1);
+	double gamma = .00001;
+	double precision = .00000001;
+	// counts the number of times we're off by error
+	int bad = 0;
+	double error = .2;
+
+	for(int i = 1; i < 100; ++i){
+		cout << "coefficients: " << i << endl;
+		MatrixXd x;
+		VectorXd y, ans, init;
+		ans = test_prep(x, y, init, i, i*2);
+		gradient_descent gd(x,y);
+		VectorXd res;
+		try {
+			res = gd.fit(init, gamma, precision);
+			ArrayXd temp = (res - ans).array();
+			// if our calculated coefs are within an error of the answer we're good
+			if((temp.abs() < error).all()){
+				cout << "GOOD" << endl;
+			}
+			else{
+				++bad;
+				cout << "OFF" << endl;
+				cout << "result " << endl << res << endl;
+				cout << "ans " << endl << ans << endl;
+			}
+		}
+		catch(std::exception& e){
+			cout << "exception: " << e.what() << endl;
+		}
+	}
+	cout << bad << " were off by more than " << error << endl;
 }

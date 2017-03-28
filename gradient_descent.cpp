@@ -2,94 +2,82 @@
 
 #include "gradient_descent.h"
 
-// dL/da = 1/N sum(-2x(y-xa-b))
-// where x and y come from the training data and N is the size of x and y
-
-double gradient_descent::dLda(double a, double b){
-	double sum = 0;
-	for(int i = 0; i < x.size(); ++i){
-		sum += (-2)*(x[i])*(y[i]-((a*x[i])+b));
+// computes the gradient of some vector w in terms of the training data
+VectorXd gradient_descent::gradient(VectorXd w){
+	VectorXd result;
+	for(int i = 0; i < _X.cols(); ++i){
+		result += 2*(_X.col(i) * ((w.transpose() * _X.col(i)) - _y(i)))/w.cols();
 	}
-	sum /= x.size();
-	return sum;	
+	return result;
 }
 
-// dL/db = 1/N sum(-2(y-ax-b))
-// where x and y come from the training data and N is the size of x and y
-double gradient_descent::dLdb(double a, double b){
-	double sum = 0;
-	for(int i = 0; i < x.size(); ++i){
-		sum += (-2)*(y[i]-((a*x[i])+b));
-	}
-	sum /= x.size();
-	return sum;
-}
-
-// computes a new vector by doing the summation over the training data 
-Vector2d gradient_descent::dL(Vector2d ab){
-	double a = dLda(ab(0),ab(1));
-	double b = dLdb(ab(0),ab(1));
-	Vector2d temp;
-	temp << a,b;
-	return temp;
+// determines if the values in w are beneath the precision value
+bool gradient_descent::done(VectorXd w, double precision){
+	// convert w to an Array so we can do coefficent-wise ops like abs()
+	ArrayXd temp = w.array();
+	temp = temp.abs();
+	return (temp < precision).all();
 }
 
 // L(a,b) = 1/N sum (y-ax-b)^2
 // we know this is working when the value of the loss function gets smaller
-double gradient_descent::Loss(double a, double b){
-	double sum = 0;
-	for(int i = 0; i < x.size(); ++i){
-		double temp = y[i] - ((a*x[i]) + b);
-		sum += (temp*temp);
+double gradient_descent::Loss(VectorXd w){
+	double loss = 0;
+	for(int i = 0; i < _X.cols(); ++i){
+		double temp = w.transpose() * _X.col(i) - _y(i);
+		loss += temp*temp;
 	}
-	sum /= x.size();
-	return sum;
+	loss /= _X.cols();
+	return loss;
 }
 
 // default constructor to appease Cython
 gradient_descent::gradient_descent(){}
 
-// construction involves providing test data
-gradient_descent::gradient_descent(vector<int> n, vector<int> m):
-	x(n),
-	y(m)
+// construction using arbitrary size data
+gradient_descent::gradient_descent(MatrixXd X, VectorXd y):
+	_X(X),
+	_y(y)
 	{}
 	
 // does the actual fitting using gradient descent
 // params: 
-Vector2d gradient_descent::fit(Vector2d ab, double gamma, double precision, bool verbose){
-	Vector2d x_old, x_new, diff;
-	// these don't matter b/c they are trashed once we get into the while
-	x_old << ab(0)+1, ab(1)+1;
-	// starting a and b will be (0,0)
-	x_new = ab;
-	diff = x_old - x_new;
+VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, bool verbose){
+	assert(init.rows() == _X.rows());
+	// these are used for iteration
+	// think of w_k-1 and w_k where diff is the difference btw the two
+	VectorXd w_k1, w_k, diff(init.rows());
+	// starting values for w the weights we're solving for
+	w_k = init;
+	// fill diff with ones so we can get false from done
+	for(int i = 0; i < w_k.rows(); ++i){
+		diff(i) = 1;
+	}
 	double loss = 10000000;
 	int i = 0;
-	while((fabs(diff(0)) > precision || fabs(diff(1)) > precision)){
+	while( !done(diff, precision) ){
 		if(verbose){
    			cout << "iteration: " << i++ << endl;
-			cout << "Loss " << loss << endl;
+			cout << "Loss: " << loss << endl;
+			cout << "gradient: " << w_k << endl;
 		}
-		x_old = x_new;
-		x_new += -gamma*dL(x_old);
-		diff = x_old - x_new;
-		loss = Loss(x_new(0),x_new(1));
+		w_k1 = w_k;
+		w_k -= gamma*gradient(w_k1);
+		diff = w_k1 - w_k;
+		loss = Loss(w_k);
+		if(loss == numeric_limits<double>::infinity()){
+			throw runtime_error("we have diverged!");
+		}
 	}
 	if(verbose){
-		cout << "coefficients: " << endl << x_new << endl;
+		cout << "coefficients: " << endl << w_k << endl;
 	}
-	return x_new;
+	return w_k;
 }
 
 // a slightly different version of fit so that I don't have 
 // to wrap Eigen for Cython
 vector<double> gradient_descent::py_fit(vector<int> ab, double gamma, double precision, bool verbose){
-	Vector2d tmp;
-	tmp << ab[0], ab[1];
-	Vector2d result = fit(tmp,gamma,precision,verbose);
 	vector<double> r;
-	r.push_back(result(0));
-	r.push_back(result(1));
 	return r;
 }

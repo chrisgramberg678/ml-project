@@ -1,8 +1,14 @@
 # ml-project
 
-compile the c++ code using 
+To test the C++ code on it's own compile using:
 
 `g++ -std=c++11 gradient_descent.cpp test_gradient_descent.cpp -o gradient_descent`
+
+and run using
+
+'./gradient_descent'
+
+The python module doesn't work right now b/c it needs to updated to work with the new way gradient descent is implemented.
 
 To use this as a Python module compile it using the command: 
 

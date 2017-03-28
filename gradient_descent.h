@@ -1,37 +1,41 @@
 #include <iostream>
 #include <Eigen/Dense>
-#include <math.h> // used for fabs() -- absolute value of float
 #include <vector>
+#include <limits>
 using namespace std;
-using Eigen::Vector2d;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+using Eigen::ArrayXd;
 
 class gradient_descent{
 	private:
-		// the data we're going to fit a line to
-		vector<int> x,y;
+		// the data we want to fit
+		// data
+		MatrixXd _X;
+		//labels
+		VectorXd _y;
 
-		// dL/da = 1/N sum(-2x(y-xa-b))
-		// where x and y come from the training data and N is the size of x and y
-		double dLda(double a, double b);
+		// computes the gradient vector by doing the summation over the training data 
+		VectorXd gradient(VectorXd w);
 
-		// dL/db = 1/N sum(-2(y-ax-b))
-		// where x and y come from the training data and N is the size of x and y
-		double dLdb(double a, double b);
+		// L(w) = 1/N sum (w^T*x_i - y_i)^2
+		// we know that our fit is working when the value of the loss function gets smaller
+		double Loss(VectorXd w);
 
-		// computes a new vector by doing the summation over the training data 
-		Vector2d dL(Vector2d ab);
+		// helper for the main loop in fit
+		bool done(VectorXd w, double precision);
 
-		// L(a,b) = 1/N sum (y-ax-b)^2
-		// we know this is working when the value of the loss function gets smaller
-		double Loss(double a, double b);
 	public:
 		// need a default constructor to appease Cython
 		gradient_descent();
-		// construction uses to vectors to represent data
-		gradient_descent(vector<int> n, vector<int> m);
+		// construction using arbitrary size data X and y
+		// dimensionality of X should be dxN where
+		// d is the dimensionality of the problem and N is the number of data points
+		// dimensionality of y is 1xN
+		gradient_descent(MatrixXd X, VectorXd y);
 
-		// does the actual work of fitting a function to the data
-		Vector2d fit(Vector2d ab, double gamma, double precision, bool verbose = false);
+		// does the actual work of fitting a model to the data
+		VectorXd fit(VectorXd init, double gamma, double precision, bool verbose = false);
 
 		// a slightly different version of fit so that I don't have 
 		// to wrap the entire Eigen library for Cython
