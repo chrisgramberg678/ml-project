@@ -44,9 +44,8 @@ int main(){
 		cout << "coefficients: " << i << endl;
 		MatrixXd x;
 		VectorXd y, ans, init;
-		ans = test_prep(x, y, init, i, i*2);
+		ans = test_prep(x, y, init, i, i*20);
 		gradient_descent gd(x,y);
-		cout << "X:\n" << x << endl << "y:\n" << y << endl;
 		VectorXd res;
 		try {
 			res = gd.fit(init, gamma, precision);

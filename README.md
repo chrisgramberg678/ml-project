@@ -6,7 +6,7 @@ To test the C++ code on it's own compile using:
 
 and run using
 
-'./gradient_descent'
+`./gradient_descent`
 
 To use this as a Python module compile it using the command: 
 
