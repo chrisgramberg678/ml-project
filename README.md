@@ -12,7 +12,7 @@ To use this as a Python module compile it using the command:
 
 `python gradient_descent_setup.py build_ext --inplace`
 
-This will create a grad.so file which can be imported into Python using `import grad'.
+This will create a grad.so file which can be imported into Python using `import grad`.
 There is a test method `grad.test()` which demonstrates a simple example of using the PyGradient_Descent class. New gradient_descent objects can be created in this way:
 
 `gd = PyGradient_Descent([X],[y])`
