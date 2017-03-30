@@ -34,19 +34,19 @@ VectorXd test_prep(MatrixXd& X, VectorXd& y, VectorXd& init, int coefficients, i
 
 int main(){
 	srand(1);
-	double gamma = .00001;
-	double precision = .00000001;
+	double gamma = .001;
+	double precision = .000000001;
 	// counts the number of times we're off by error
 	int bad = 0;
 	double error = .2;
 
-	// currently the tests will fail by diverging around i = 50
-	for(int i = 1; i < 100; ++i){
+	for(int i = 0; i < 20; ++i){
 		cout << "coefficients: " << i << endl;
 		MatrixXd x;
 		VectorXd y, ans, init;
 		ans = test_prep(x, y, init, i, i*2);
 		gradient_descent gd(x,y);
+		cout << "X:\n" << x << endl << "y:\n" << y << endl;
 		VectorXd res;
 		try {
 			res = gd.fit(init, gamma, precision);

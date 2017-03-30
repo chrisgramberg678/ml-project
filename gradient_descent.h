@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <limits>
+#include <string>
 using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -25,6 +26,11 @@ class gradient_descent{
 		// helper for the main loop in fit
 		bool done(VectorXd w, double precision);
 
+		// helpers for interfacting to Cython
+		vector<double> eigen_to_stl(VectorXd v);
+		VectorXd stl_to_eigen(vector<double> v);
+		MatrixXd stl_to_eigen(vector< vector<double> > v);
+
 	public:
 		// need a default constructor to appease Cython
 		gradient_descent();
@@ -33,11 +39,13 @@ class gradient_descent{
 		// d is the dimensionality of the problem and N is the number of data points
 		// dimensionality of y is 1xN
 		gradient_descent(MatrixXd X, VectorXd y);
+		//construction using STL vectors so that we can interface with Cython
+		gradient_descent(vector< vector<double> > X, vector<double> y);
 
 		// does the actual work of fitting a model to the data
 		VectorXd fit(VectorXd init, double gamma, double precision, bool verbose = false);
 
 		// a slightly different version of fit so that I don't have 
 		// to wrap the entire Eigen library for Cython
-		vector<double> py_fit(vector<int> ab, double gamma, double precision, bool verbose = false);
+		vector<double> py_fit(vector<double> init, double gamma, double precision);
 };
