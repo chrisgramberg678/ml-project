@@ -39,6 +39,8 @@ int main(){
 	// counts the number of times we're off by error
 	int bad = 0;
 	double error = .2;
+	linear_least_squares_model m;
+	Model* M = &m;
 
 	for(int i = 0; i < 20; ++i){
 		cout << "coefficients: " << i << endl;
@@ -48,7 +50,7 @@ int main(){
 		gradient_descent gd(x,y);
 		VectorXd res;
 		try {
-			res = gd.fit(init, gamma, precision);
+			res = gd.fit(init, gamma, precision, M);
 			ArrayXd temp = (res - ans).array();
 			// if our calculated coefs are within an error of the answer we're good
 			if((temp.abs() < error).all()){

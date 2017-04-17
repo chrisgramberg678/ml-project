@@ -1,11 +1,9 @@
 #include <iostream>
-#include <Eigen/Dense>
 #include <vector>
 #include <limits>
 #include <string>
+#include "model.h"
 using namespace std;
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
 using Eigen::ArrayXd;
 
 class gradient_descent{
@@ -15,13 +13,6 @@ class gradient_descent{
 		MatrixXd _X;
 		//labels
 		VectorXd _y;
-
-		// computes the gradient vector by doing the summation over the training data 
-		VectorXd gradient(VectorXd w);
-
-		// L(w) = 1/N sum (w^T*x_i - y_i)^2
-		// we know that our fit is working when the value of the loss function gets smaller
-		double Loss(VectorXd w);
 
 		// helper for the main loop in fit
 		bool done(VectorXd w, double precision);
@@ -43,9 +34,9 @@ class gradient_descent{
 		gradient_descent(vector< vector<double> > X, vector<double> y);
 
 		// does the actual work of fitting a model to the data
-		VectorXd fit(VectorXd init, double gamma, double precision, bool verbose = false);
+		VectorXd fit(VectorXd init, double gamma, double precision, Model* M, bool verbose = false);
 
 		// a slightly different version of fit so that I don't have 
 		// to wrap the entire Eigen library for Cython
-		vector<double> py_fit(vector<double> init, double gamma, double precision);
+		vector<double> py_fit(vector<double> init, double gamma, double precision, Model* M);
 };

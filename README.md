@@ -2,7 +2,7 @@
 
 To test the C++ code on it's own compile using:
 
-`g++ -std=c++11 gradient_descent.cpp test_gradient_descent.cpp -o gradient_descent`
+`g++ -std=c++11 model.cpp gradient_descent.cpp test_gradient_descent.cpp -o gradient_descent`
 
 and run using
 
