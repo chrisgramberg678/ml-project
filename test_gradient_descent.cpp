@@ -20,8 +20,10 @@ VectorXd test_prep(MatrixXd& X, VectorXd& y, VectorXd& init, int coefficients, i
 	// fill y with some values by multiplying X and the coefficients
 	// and adding some noise
 	y = coefs.transpose() * X;
+	// y.resize(points);
 	for(int i = 0; i < points; ++i){
 		y(i) += (rand() % 200 - 100) / 100.0;
+		// y(i) = rand() % 2;
 	}
 	// set init to have the correct dimensions and set it to all 0's
 	init.resize(coefficients);
@@ -32,6 +34,9 @@ VectorXd test_prep(MatrixXd& X, VectorXd& y, VectorXd& init, int coefficients, i
 }
 
 
+// pick a w randomly and generate based on that
+// i should be able to find some bernoulli rng to set the probability of one being what we set earlier
+
 int main(){
 	srand(1);
 	double gamma = .001;
@@ -40,7 +45,8 @@ int main(){
 	int bad = 0;
 	double error = .2;
 	linear_least_squares_model m;
-	Model* M = &m;
+	// binary_logistic_regression_model m;
+	model* M = &m;
 
 	for(int i = 0; i < 20; ++i){
 		cout << "coefficients: " << i << endl;

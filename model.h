@@ -3,21 +3,27 @@
 // or a binary logistic model to do binary clasification
 
 #include <Eigen/Dense>
+#include "math.h"
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-class Model{
+class model{
 	public:
-		virtual VectorXd gradient(VectorXd w, MatrixXd X, VectorXd y) = 0;
-		virtual double loss(VectorXd w, MatrixXd X, VectorXd y) = 0;
+		model();
+		virtual VectorXd gradient(VectorXd w, MatrixXd X, VectorXd y);
+		virtual double loss(VectorXd w, MatrixXd X, VectorXd y);
 };
 
-class linear_least_squares_model : public Model{
-	VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
-	double loss(VectorXd w, MatrixXd X, VectorXd y);
+class linear_least_squares_model : public model{
+	public:
+		linear_least_squares_model();
+		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
+		double loss(VectorXd w, MatrixXd X, VectorXd y);
 };
 
-class binary_logistic_regression_model : public Model{
-	VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
-	double loss(VectorXd w, MatrixXd X, VectorXd y);
+class binary_logistic_regression_model : public model{
+	public:
+		binary_logistic_regression_model();
+		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
+		double loss(VectorXd w, MatrixXd X, VectorXd y);
 };

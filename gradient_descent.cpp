@@ -24,7 +24,7 @@ gradient_descent::gradient_descent(vector< vector<double> > X, vector<double> y)
 	{}
 // does the actual fitting using gradient descent
 // params: 
-VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, Model* M, bool verbose){
+VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, model* M, bool verbose){
 	if(init.rows() != _X.rows()){
 		throw invalid_argument("initial values must have the same size as the number of coefficients");
 	}
@@ -41,9 +41,9 @@ VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, Mo
 	int i = 0;
 	while( !done(diff, precision) ){
 		if(verbose){
-   			cout << "iteration: " << i++ << endl;
+   			// cout << "iteration: " << i++ << endl;
 			cout << "Loss: " << loss << endl;
-			cout << "gradient: " << w_k << endl;
+			// cout << "gradient: " << w_k << endl;
 		}
 		w_k1 = w_k;
 		w_k -= gamma*M->gradient(w_k1, _X, _y);
@@ -90,7 +90,7 @@ MatrixXd gradient_descent::stl_to_eigen(vector< vector<double> > v){
 // a slightly different version of fit so that I don't have 
 // to wrap Eigen for Cython
 // It calls the normal fit function and moves it into a STL vector so Cython can convert it to numpy
-vector<double> gradient_descent::py_fit(vector<double> init, double gamma, double precision, Model* M){
+vector<double> gradient_descent::py_fit(vector<double> init, double gamma, double precision, model* M){
 	VectorXd ans = fit(stl_to_eigen(init), gamma, precision, M);
 	return eigen_to_stl(ans);
 }

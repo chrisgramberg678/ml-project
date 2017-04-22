@@ -34,9 +34,13 @@ class gradient_descent{
 		gradient_descent(vector< vector<double> > X, vector<double> y);
 
 		// does the actual work of fitting a model to the data
-		VectorXd fit(VectorXd init, double gamma, double precision, Model* M, bool verbose = false);
+		VectorXd fit(VectorXd init, double gamma, double precision, model* M, bool verbose = false);
 
 		// a slightly different version of fit so that I don't have 
 		// to wrap the entire Eigen library for Cython
-		vector<double> py_fit(vector<double> init, double gamma, double precision, Model* M);
+		vector<double> py_fit(vector<double> init, double gamma, double precision, model* M);
+
+
+		// for stochastic we'll have python do the outer loop
+		// be able to ask for W and also ask for an update to W
 };
