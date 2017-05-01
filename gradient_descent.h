@@ -14,6 +14,9 @@ class gradient_descent{
 		//labels
 		VectorXd _y;
 
+		// keeps track of where we are in _X when using stochastic fit
+		int stochastic_step;
+
 		// helper for the main loop in fit
 		bool done(VectorXd w, double precision);
 
@@ -36,9 +39,15 @@ class gradient_descent{
 		// does the actual work of fitting a model to the data
 		VectorXd fit(VectorXd init, double gamma, double precision, model* M, bool verbose = false);
 
+		// does a single step using only one of the data points
+		VectorXd stochastic_fit(VectorXd prev, double gamma, model* M, bool verbose = false);
+
 		// a slightly different version of fit so that I don't have 
-		// to wrap the entire Eigen library for Cython
+		// to wrap the VexctorXd class for Cython
 		vector<double> py_fit(vector<double> init, double gamma, double precision, model* M);
+
+		// wrapper for Cython to call stochastic_fit
+		vector<double> py_stochastic_fit(vector<double> prev, double gamma, model* M);
 
 
 		// for stochastic we'll have python do the outer loop

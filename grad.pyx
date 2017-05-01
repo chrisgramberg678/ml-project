@@ -16,6 +16,7 @@ cdef extern from "gradient_descent.h" :
 		gradient_descent() except + 
 		gradient_descent(vector[ vector[double] ], vector[double]) except +
 		vector[double] py_fit(vector[double], double, double, model*) except +
+		vector[double] py_stochastic_fit(vector[double], double, model*) except +
 	
 
 #import the model class so we can wrap it up its children (linear least squares and logistic regression)
@@ -50,11 +51,16 @@ cdef class PyGradient_Descent:
 		cdef vector[double] _y = list(y)
 		self.c_gd = gradient_descent(_x, _y)
 	def fit(self, init, double gamma, double precision, PyModel M):
-		# convert the initial values to a vector of doubles
+		# convert the parameters
 		cdef vector[double] _init = init
-		# cdef model* m = PyLLSModel().LLSptr
 		cdef model* m = M.modelptr
 		# then call the function and convert the resulting
 		# vector[double] to a numpy array
-		cdef vector[double] _res = self.c_gd.py_fit(_init, gamma, precision, m)
-		return np.array(list(_res))
+		cdef vector[double] result = self.c_gd.py_fit(_init, gamma, precision, m)
+		return np.array(list(result))
+	def stochastic_fit(self, prev, double gamma, PyModel M):
+		# convert the parameters
+		cdef vector[double] _prev = prev
+		cdef model* m = M.modelptr
+		cdef vector[double] result = self.c_gd.py_stochastic_fit(_prev, gamma, m)
+		return np.array(list(result))

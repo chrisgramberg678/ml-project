@@ -17,7 +17,7 @@ gradient_descent::gradient_descent(){}
 gradient_descent::gradient_descent(MatrixXd X, VectorXd y):
 	_X(X),
 	_y(y)
-	{}
+	{stochastic_step = 0;}
 	
 gradient_descent::gradient_descent(vector< vector<double> > X, vector<double> y):
 	gradient_descent(stl_to_eigen(X),stl_to_eigen(y))
@@ -92,5 +92,21 @@ MatrixXd gradient_descent::stl_to_eigen(vector< vector<double> > v){
 // It calls the normal fit function and moves it into a STL vector so Cython can convert it to numpy
 vector<double> gradient_descent::py_fit(vector<double> init, double gamma, double precision, model* M){
 	VectorXd ans = fit(stl_to_eigen(init), gamma, precision, M);
+	return eigen_to_stl(ans);
+}
+
+
+// similar to fit() but only computes the gradient in terms of the next value in _X
+VectorXd gradient_descent::stochastic_fit(VectorXd prev, double gamma, model* M, bool verbose){
+	// compute the gradient but woth only one data point
+	VectorXd result = prev - gamma * M->gradient(prev, _X.col(stochastic_step), _y);
+	// if there are more columns then just increment the counter
+	// otherwise, go back to the beginning of _X
+	(stochastic_step >= _X.cols()) ? (++stochastic_step) : (stochastic_step = 0);
+	return result;
+}
+
+vector<double> gradient_descent::py_stochastic_fit(vector<double> prev, double gamma, model* M){
+	VectorXd ans = stochastic_fit(stl_to_eigen(prev), gamma, M);
 	return eigen_to_stl(ans);
 }
