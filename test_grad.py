@@ -3,9 +3,13 @@ import numpy as np
 from scipy.stats import bernoulli
 
 def main():
-	# lls_test()
-	# log_reg_test()
-	stochastic_test()
+	for i in range(10):
+		print "Seed: {0}".format(i)
+		np.random.seed(i)
+		try:
+			log_reg_test()
+		except RuntimeError as e:
+			print "Runtime Error: {0}".format(e)
 
 # simple test 
 def lls_test():
@@ -16,7 +20,7 @@ def lls_test():
 	w.shape = (2,1)
 	y = w.transpose().dot(x).flatten()
 	m = grad.PyLLSModel()
-	gd = grad.PyGradient_Descent(x,y)
+	gd = grad.PyBatch_Gradient_Descent(x,y)
 	ans = gd.fit([0,0],.001,.000000001, m)
 	print "w was:"
 	print w.flatten()
@@ -25,9 +29,7 @@ def lls_test():
 
 def log_reg_test():
 	print "binary logistic regression test:"
-	# 10 data points with 2 parts each
-	x = 10 * np.random.randn(4,10000)
-	print x
+	x = 10 * np.random.randn(4,100)
 	# 2 coefficients 
 	w = np.random.rand(4)
 	# force it to be a column vector
@@ -37,16 +39,16 @@ def log_reg_test():
 	y = bernoulli.rvs(logit)
 	# initialize the model
 	m = grad.PyBLRModel()
-	gd = grad.PyGradient_Descent(x,y)
-	ans = gd.fit([0,0,0,0],.00001,.000000001, m)
+	gd = grad.PyBatch_Gradient_Descent(x,y)
 	print "w was:"
 	print w.flatten()
+	ans = gd.fit([0,0,0,0],.00001,.000000001, m)
 	print "we got:"
 	print ans
 
 def stochastic_test():
 	print "stochastic test:"
-	x = np.random.rand(2,10)
+	x = np.random.rand(2,100)
 	w = np.random.rand(2)
 	# force w to be a column vector
 	w.shape = (2,1)
@@ -54,20 +56,23 @@ def stochastic_test():
 	m = grad.PyLLSModel()
 	gd = grad.PyGradient_Descent(x,y)
 	# we can check this by moving the main loop of fit outside the gradient calculation
-	precision = np.zeros(2) + .000000001
+	precision = np.zeros(2) + .0000000001
 	curr, prev = np.array([0,0]), np.array([2,2])
 	diff = np.absolute(prev - curr)
 	flags = np.greater(diff, precision)
-	while flags.any():
+	# while any of the old values are not within the precision of the new values
+	losses = np.zeros(0)
+	for i in range(1000000):
 		# hold onto the old value
 		prev = curr
 		# get the new one
+		# we want to hand in a single data point or a group of points
 		curr = gd.stochastic_fit(prev,.001, m)
 		# get the difference
-		diff = np.absolute(prev - curr)
-		print diff
+		# diff = np.absolute(prev - curr)
 		# update flags
-		flags = np.greater(diff, precision)
+		# flags = np.greater(diff, precision)
+		# losses = gd
 	print "w was:"
 	print w.flatten()
 	print "we got:"
