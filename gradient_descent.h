@@ -17,6 +17,12 @@ class optomization_solver_base{
 		// all solvers need a model
 		model* m;
 
+		// all solvers will track the loss value at each step so that we can plot it
+		vector<double> loss_values;
+
+		// simple getter for above
+		vector<double> get_loss();
+
 		// helpers for interfacting to Cython
 		vector<double> eigen_to_stl(VectorXd v);
 		VectorXd stl_to_eigen(vector<double> v);

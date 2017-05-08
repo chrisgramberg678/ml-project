@@ -2,7 +2,15 @@
 
 #include "gradient_descent.h"
 
+/**************************************************************
+ * Implementation for the base class optomization_solver_base *
+ **************************************************************/
+
 optomization_solver_base::optomization_solver_base(){}
+
+vector<double> optomization_solver_base::get_loss(){
+	return loss_values;
+}
 
 vector<double> optomization_solver_base::eigen_to_stl(VectorXd v){
 	vector<double> t(v.rows());
@@ -42,6 +50,10 @@ MatrixXd optomization_solver_base::stl_to_eigen(vector< vector<double> > v){
 	}
 	return m;
 }
+
+/*******************************************************
+ * Implementation for the batch_gradient_descent class *
+ *******************************************************/
 
 // determines if the values in w are beneath the precision value
 bool batch_gradient_descent::done(VectorXd w, double precision){
@@ -93,6 +105,7 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precisi
 		if(loss == numeric_limits<double>::infinity()){
 			throw runtime_error("we have diverged!");
 		}
+		loss_values.push_back(loss);
 	}
 	if(verbose){
 		cout << "coefficients: " << endl << w_k << endl;
@@ -107,6 +120,10 @@ vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma,
 	VectorXd ans = fit(stl_to_eigen(init), gamma, precision, M);
 	return eigen_to_stl(ans);
 }
+
+/************************************************************
+ * Implementation for the stochastic_gradient_descent class *
+ ************************************************************/
 
 stochastic_gradient_descent::stochastic_gradient_descent(){}
 
