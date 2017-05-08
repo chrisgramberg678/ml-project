@@ -53,7 +53,7 @@ int main(){
 		MatrixXd x;
 		VectorXd y, ans, init;
 		ans = test_prep(x, y, init, i, i*20);
-		gradient_descent gd(x,y);
+		batch_gradient_descent gd(x,y);
 		VectorXd res;
 		try {
 			res = gd.fit(init, gamma, precision, M);

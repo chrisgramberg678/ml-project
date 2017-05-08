@@ -2,8 +2,49 @@
 
 #include "gradient_descent.h"
 
+optomization_solver_base::optomization_solver_base(){}
+
+vector<double> optomization_solver_base::eigen_to_stl(VectorXd v){
+	vector<double> t(v.rows());
+	for(int i = 0; i < v.rows(); ++i){
+		t[i] = v(i);
+	}
+	return t;
+}
+
+VectorXd optomization_solver_base::stl_to_eigen(vector<double> v){
+	VectorXd t(v.size());
+	for(int i = 0; i < v.size(); ++i){
+		t(i) = v[i];
+	}
+	return t;
+}
+
+// this method assumes the v has dimensions ixj, however because v is a vector of vectors
+// it is possible that the vectors in v have different sizes. 
+// ie:
+// [[1,2,3],
+//  [1,2],
+//  [1,2,3]]
+// therfore we're going to check that this property holds within the inner loop 
+// and throw an exception if necessary
+MatrixXd optomization_solver_base::stl_to_eigen(vector< vector<double> > v){
+	MatrixXd m(v.size(),v[0].size());
+	for(int i = 0; i < v.size(); ++i){
+		// check the precondition
+		if(v[0].size() != v[i].size()){
+			throw invalid_argument("cannot convert input values to Eigen MatrixXd. All rows must have the same number of values");
+		}
+
+		for(int j = 0; j < v[i].size(); ++j){
+			m(i,j) = v[i][j];
+		}
+	}
+	return m;
+}
+
 // determines if the values in w are beneath the precision value
-bool gradient_descent::done(VectorXd w, double precision){
+bool batch_gradient_descent::done(VectorXd w, double precision){
 	// convert w to an Array so we can do coefficent-wise ops like abs()
 	ArrayXd temp = w.array();
 	temp = temp.abs();
@@ -11,20 +52,20 @@ bool gradient_descent::done(VectorXd w, double precision){
 }
 
 // default constructor to appease Cython
-gradient_descent::gradient_descent(){}
+batch_gradient_descent::batch_gradient_descent(){}
 
 // construction using arbitrary size data
-gradient_descent::gradient_descent(MatrixXd X, VectorXd y):
+batch_gradient_descent::batch_gradient_descent(MatrixXd X, VectorXd y):
 	_X(X),
 	_y(y)
-	{stochastic_step = 0;}
+	{}
 	
-gradient_descent::gradient_descent(vector< vector<double> > X, vector<double> y):
-	gradient_descent(stl_to_eigen(X),stl_to_eigen(y))
+batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vector<double> y):
+	batch_gradient_descent(stl_to_eigen(X),stl_to_eigen(y))
 	{}
 // does the actual fitting using gradient descent
 // params: 
-VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, model* M, bool verbose){
+VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precision, model* M, bool verbose){
 	if(init.rows() != _X.rows()){
 		throw invalid_argument("initial values must have the same size as the number of coefficients");
 	}
@@ -59,54 +100,24 @@ VectorXd gradient_descent::fit(VectorXd init, double gamma, double precision, mo
 	return w_k;
 }
 
-vector<double> gradient_descent::eigen_to_stl(VectorXd v){
-	vector<double> t(v.rows());
-	for(int i = 0; i < v.rows(); ++i){
-		t[i] = v(i);
-	}
-	return t;
-}
-
-VectorXd gradient_descent::stl_to_eigen(vector<double> v){
-	VectorXd t(v.size());
-	for(int i = 0; i < v.size(); ++i){
-		t(i) = v[i];
-	}
-	return t;
-}
-
-// this method assumes the v has dimensions ixj, however because v is a vector of vectors
-// it is possible that the vectors in v have different sizes. 
-MatrixXd gradient_descent::stl_to_eigen(vector< vector<double> > v){
-	MatrixXd m(v.size(),v[0].size());
-	for(int i = 0; i < v.size(); ++i){
-		for(int j = 0; j < v[i].size(); ++j){
-			m(i,j) = v[i][j];
-		}
-	}
-	return m;
-}
-
 // a slightly different version of fit so that I don't have 
 // to wrap Eigen for Cython
 // It calls the normal fit function and moves it into a STL vector so Cython can convert it to numpy
-vector<double> gradient_descent::py_fit(vector<double> init, double gamma, double precision, model* M){
+vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma, double precision, model* M){
 	VectorXd ans = fit(stl_to_eigen(init), gamma, precision, M);
 	return eigen_to_stl(ans);
 }
 
+stochastic_gradient_descent::stochastic_gradient_descent(){}
 
-// similar to fit() but only computes the gradient in terms of the next value in _X
-VectorXd gradient_descent::stochastic_fit(VectorXd prev, double gamma, model* M, bool verbose){
+// TODO: implement, issue #7 on github
+VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma, model* M, bool verbose){
 	// compute the gradient but woth only one data point
-	VectorXd result = prev - gamma * M->gradient(prev, _X.col(stochastic_step), _y);
-	// if there are more columns then just increment the counter
-	// otherwise, go back to the beginning of _X
-	(stochastic_step >= _X.cols()) ? (++stochastic_step) : (stochastic_step = 0);
+	VectorXd result;
 	return result;
 }
 
-vector<double> gradient_descent::py_stochastic_fit(vector<double> prev, double gamma, model* M){
-	VectorXd ans = stochastic_fit(stl_to_eigen(prev), gamma, M);
+vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma, model* M){
+	VectorXd ans = fit(stl_to_eigen(prev), gamma, M);
 	return eigen_to_stl(ans);
 }
