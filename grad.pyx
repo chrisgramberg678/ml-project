@@ -17,8 +17,8 @@ cdef extern from "gradient_descent.h" :
 		vector[double] get_loss()
 	cdef cppclass batch_gradient_descent(optomization_solver_base):
 		batch_gradient_descent() except + 
-		batch_gradient_descent(vector[ vector[double] ], vector[double]) except +
-		vector[double] py_fit(vector[double], double, double, model*) except +
+		batch_gradient_descent(vector[ vector[double] ], vector[double], model*) except +
+		vector[double] py_fit(vector[double], double, double) except +
 
 # the python classes that wrap around the c++ classes for models
 cdef class PyModel:
@@ -49,17 +49,17 @@ cdef class PyOptomization_Solver_Base:
 cdef class PyBatch_Gradient_Descent(PyOptomization_Solver_Base):
 	# the C++ object that does gradient_descent
 	cdef batch_gradient_descent* batchptr	
-	def __cinit__(self, x, y):
+	def __cinit__(self, x, y, PyModel M):
 		# convert the lists x and y into vectors that we can use
 		cdef vector[ vector [double] ] _x = list(list(x))
 		cdef vector[double] _y = list(y)
+		cdef model* m = M.modelptr
 		if type(self) is PyBatch_Gradient_Descent:
-			self.batchptr = self.solverptr = new batch_gradient_descent(_x, _y)
-	def fit(self, init, double gamma, double precision, PyModel M):
+			self.batchptr = self.solverptr = new batch_gradient_descent(_x, _y, m)
+	def fit(self, init, double gamma, double precision):
 		# convert the parameters
 		cdef vector[double] _init = init
-		cdef model* m = M.modelptr
 		# then call the function and convert the resulting
 		# vector[double] to a numpy array
-		cdef vector[double] result = self.batchptr.py_fit(_init, gamma, precision, m)
+		cdef vector[double] result = self.batchptr.py_fit(_init, gamma, precision)
 		return np.array(list(result))

@@ -20,8 +20,8 @@ def lls_test():
 	w.shape = (2,1)
 	y = w.transpose().dot(x).flatten()
 	m = grad.PyLLSModel()
-	gd = grad.PyBatch_Gradient_Descent(x,y)
-	ans = gd.fit([0,0],.001,.000000001, m)
+	gd = grad.PyBatch_Gradient_Descent(x,y,m)
+	ans = gd.fit([0,0],.001,.000000001)
 	print "w was:"
 	print w.flatten()
 	print "we got:"
@@ -39,10 +39,10 @@ def log_reg_test():
 	y = bernoulli.rvs(logit)
 	# initialize the model
 	m = grad.PyBLRModel()
-	gd = grad.PyBatch_Gradient_Descent(x,y)
+	gd = grad.PyBatch_Gradient_Descent(x,y,m)
 	print "w was:"
 	print w.flatten()
-	ans = gd.fit([0,0,0,0],.00001,.000000001, m)
+	ans = gd.fit([0,0,0,0],.00001,.000000001)
 	print "we got:"
 	print ans
 
