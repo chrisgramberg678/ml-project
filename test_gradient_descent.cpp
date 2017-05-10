@@ -53,10 +53,10 @@ int main(){
 		MatrixXd x;
 		VectorXd y, ans, init;
 		ans = test_prep(x, y, init, i, i*20);
-		batch_gradient_descent gd(x,y);
+		batch_gradient_descent gd(x,y,M);
 		VectorXd res;
 		try {
-			res = gd.fit(init, gamma, precision, M);
+			res = gd.fit(init, gamma, precision);
 			ArrayXd temp = (res - ans).array();
 			// if our calculated coefs are within an error of the answer we're good
 			if((temp.abs() < error).all()){

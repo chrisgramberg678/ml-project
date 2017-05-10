@@ -54,17 +54,17 @@ class batch_gradient_descent : public optomization_solver_base{
 		   d is the dimensionality of the problem and N is the number of data points
 		   dimensionality of y is 1xN
 		 */
-		batch_gradient_descent(MatrixXd X, VectorXd y);
+		batch_gradient_descent(MatrixXd X, VectorXd y, model* M);
 		
 		//construction using STL vectors so that we can interface with Cython
-		batch_gradient_descent(vector< vector<double> > X, vector<double> y);
+		batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M);
 
 		// does the actual work of fitting a model to the data
-		VectorXd fit(VectorXd init, double gamma, double precision, model* M, bool verbose = false);
+		VectorXd fit(VectorXd init, double gamma, double precision);
 
 		// a slightly different version of fit so that I don't have to wrap the VexctorXd class for Cython
 		// This works because Cython comes with automatic conversion from STL vectors to Python lists
-		vector<double> py_fit(vector<double> init, double gamma, double precision, model* M);
+		vector<double> py_fit(vector<double> init, double gamma, double precision);
 };
 
 
@@ -81,14 +81,8 @@ class stochastic_gradient_descent : public optomization_solver_base{
 		// need a default constructor to appease Cython
 		stochastic_gradient_descent();
 		
-		/* construction using arbitrary size data X and y
-		   dimensionality of X should be dxN where
-		   d is the dimensionality of the problem and N is the number of data points
-		   dimensionality of y is 1xN
-		 */
-
 		// does a single step using only set of data
-		VectorXd fit(VectorXd prev, double gamma, model* M, bool verbose = false);
+		VectorXd fit(VectorXd prev, double gamma);
 		// wrapper for Cython to call stochastic_fit
-		vector<double> py_fit(vector<double> prev, double gamma, model* M);
+		vector<double> py_fit(vector<double> prev, double gamma);
 };

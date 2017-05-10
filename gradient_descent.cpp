@@ -67,17 +67,17 @@ bool batch_gradient_descent::done(VectorXd w, double precision){
 batch_gradient_descent::batch_gradient_descent(){}
 
 // construction using arbitrary size data
-batch_gradient_descent::batch_gradient_descent(MatrixXd X, VectorXd y):
+batch_gradient_descent::batch_gradient_descent(MatrixXd X, VectorXd y, model* M):
 	_X(X),
 	_y(y)
-	{}
+	{m = M;}
 	
-batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vector<double> y):
-	batch_gradient_descent(stl_to_eigen(X),stl_to_eigen(y))
+batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M):
+	batch_gradient_descent(stl_to_eigen(X),stl_to_eigen(y), M)
 	{}
 // does the actual fitting using gradient descent
 // params: 
-VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precision, model* M, bool verbose){
+VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precision){
 	if(init.rows() != _X.rows()){
 		throw invalid_argument("initial values must have the same size as the number of coefficients");
 	}
@@ -93,22 +93,14 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precisi
 	double loss = 10000000;
 	int i = 0;
 	while( !done(diff, precision) ){
-		if(verbose){
-   			// cout << "iteration: " << i++ << endl;
-			cout << "Loss: " << loss << endl;
-			// cout << "gradient: " << w_k << endl;
-		}
 		w_k1 = w_k;
-		w_k -= gamma*M->gradient(w_k1, _X, _y);
+		w_k -= gamma*m->gradient(w_k1, _X, _y);
 		diff = w_k1 - w_k;
-		loss = M->loss(w_k, _X, _y);
+		loss = m->loss(w_k, _X, _y);
 		if(loss == numeric_limits<double>::infinity()){
 			throw runtime_error("we have diverged!");
 		}
 		loss_values.push_back(loss);
-	}
-	if(verbose){
-		cout << "coefficients: " << endl << w_k << endl;
 	}
 	return w_k;
 }
@@ -116,8 +108,8 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precisi
 // a slightly different version of fit so that I don't have 
 // to wrap Eigen for Cython
 // It calls the normal fit function and moves it into a STL vector so Cython can convert it to numpy
-vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma, double precision, model* M){
-	VectorXd ans = fit(stl_to_eigen(init), gamma, precision, M);
+vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma, double precision){
+	VectorXd ans = fit(stl_to_eigen(init), gamma, precision);
 	return eigen_to_stl(ans);
 }
 
@@ -128,13 +120,13 @@ vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma,
 stochastic_gradient_descent::stochastic_gradient_descent(){}
 
 // TODO: implement, issue #7 on github
-VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma, model* M, bool verbose){
-	// compute the gradient but woth only one data point
+VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma){
+	// compute the gradient but with only the given data
 	VectorXd result;
 	return result;
 }
 
-vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma, model* M){
-	VectorXd ans = fit(stl_to_eigen(prev), gamma, M);
+vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma){
+	VectorXd ans = fit(stl_to_eigen(prev), gamma);
 	return eigen_to_stl(ans);
 }
