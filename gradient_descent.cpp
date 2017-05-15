@@ -82,27 +82,26 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precisi
 		throw invalid_argument("initial values must have the same size as the number of coefficients");
 	}
 	// these are used for iteration
-	// think of w_k-1 and w_k where diff is the difference btw the two
-	VectorXd w_k1, w_k, diff(init.rows());
+	VectorXd prev, next, diff(init.rows());
 	// starting values for w the weights we're solving for
-	w_k = init;
-	// fill diff with ones so we can get false from done
-	for(int i = 0; i < w_k.rows(); ++i){
+	next = init;
+	// fill diff with ones so we can get false from done the first time
+	for(int i = 0; i < next.rows(); ++i){
 		diff(i) = 1;
 	}
 	double loss = 10000000;
 	int i = 0;
 	while( !done(diff, precision) ){
-		w_k1 = w_k;
-		w_k -= gamma*m->gradient(w_k1, _X, _y);
-		diff = w_k1 - w_k;
-		loss = m->loss(w_k, _X, _y);
+		prev = next;
+		next = prev - gamma*m->gradient(prev, _X, _y);
+		diff = prev - next;
+		loss = m->loss(next, _X, _y);
 		if(loss == numeric_limits<double>::infinity()){
 			throw runtime_error("we have diverged!");
 		}
 		loss_values.push_back(loss);
 	}
-	return w_k;
+	return next;
 }
 
 // a slightly different version of fit so that I don't have 
@@ -119,14 +118,19 @@ vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma,
 
 stochastic_gradient_descent::stochastic_gradient_descent(){}
 
-// TODO: implement, issue #7 on github
-VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma){
-	// compute the gradient but with only the given data
-	VectorXd result;
+stochastic_gradient_descent::stochastic_gradient_descent(model* M){m = M;}
+
+// take some data X and labels y and return the value of the next gradient step
+VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma, MatrixXd X, VectorXd y){
+	// compute the gradient based on the given data
+	VectorXd result = prev - gamma * m->gradient(prev, X, y);
+	// calculate the loss and add it to loss_values
+	double loss = m->loss(result, X, y);
+	loss_values.push_back(loss);
 	return result;
 }
 
-vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma){
-	VectorXd ans = fit(stl_to_eigen(prev), gamma);
+vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma, vector< vector<double> > X, vector<double> y){
+	VectorXd ans = fit(stl_to_eigen(prev), gamma, stl_to_eigen(X), stl_to_eigen(y));
 	return eigen_to_stl(ans);
 }

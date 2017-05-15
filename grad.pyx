@@ -19,6 +19,10 @@ cdef extern from "gradient_descent.h" :
 		batch_gradient_descent() except + 
 		batch_gradient_descent(vector[ vector[double] ], vector[double], model*) except +
 		vector[double] py_fit(vector[double], double, double) except +
+	cdef cppclass stochastic_gradient_descent(optomization_solver_base):
+		stochastic_gradient_descent() except +
+		stochastic_gradient_descent(model*) except +
+		vector[double] py_fit(vector[double], double, vector[ vector[double] ], vector[double]) except +
 
 # the python classes that wrap around the c++ classes for models
 cdef class PyModel:
@@ -45,6 +49,10 @@ cdef class PyOptomization_Solver_Base:
 	def __cinit__(self):
 		# you're not allowed to make instances of this class so we're not going to do anything if you try
 		pass
+	def get_loss(self):
+		# simply call the function on the pointer
+		return np.array(list(self.solverptr.get_loss()))
+
 
 cdef class PyBatch_Gradient_Descent(PyOptomization_Solver_Base):
 	# the C++ object that does gradient_descent
@@ -63,3 +71,27 @@ cdef class PyBatch_Gradient_Descent(PyOptomization_Solver_Base):
 		# vector[double] to a numpy array
 		cdef vector[double] result = self.batchptr.py_fit(_init, gamma, precision)
 		return np.array(list(result))
+
+cdef class PyStochastic_Gradient_Descent(PyOptomization_Solver_Base):
+	# the c++ object we're wrapping
+	cdef stochastic_gradient_descent* stochasticptr
+	def __cinit__(self, PyModel M):
+		cdef model* m = M.modelptr
+		if type(self) is PyStochastic_Gradient_Descent:
+			self.stochasticptr = self.solverptr = new stochastic_gradient_descent(m)
+	def fit(self, prev, double gamma, x, y):
+		cdef vector[double] _prev = list(prev)
+		# we need to check whether this x has 1 data point or many
+		cdef vector[ vector[double] ] _x
+		cdef vector[double] _y
+		if x.ndim == 2 and y.ndim == 1:
+			_x = list(list(x))
+			_y = list(y)
+		elif x.ndim == 1 and y.ndim == 0:
+			# since this x is only a single xi we want it to have the shape of a column vector
+			a = x.shape[0]
+			x.shape = (a,1)
+			_x = list(list(x))
+			_y.push_back(y)
+		cdef vector[double] res = self.stochasticptr.py_fit(_prev, gamma, _x, _y)
+		return np.array(list(res))

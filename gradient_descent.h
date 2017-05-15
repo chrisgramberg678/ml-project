@@ -11,6 +11,8 @@ using Eigen::ArrayXd;
   of Eigen Matrices, and a Model object
  */
 class optomization_solver_base{
+	public:
+		vector<double> get_loss();
 	protected:
 		// protected so that no one can create objects of this type
 		optomization_solver_base();
@@ -19,9 +21,6 @@ class optomization_solver_base{
 
 		// all solvers will track the loss value at each step so that we can plot it
 		vector<double> loss_values;
-
-		// simple getter for above
-		vector<double> get_loss();
 
 		// helpers for interfacting to Cython
 		vector<double> eigen_to_stl(VectorXd v);
@@ -80,9 +79,12 @@ class stochastic_gradient_descent : public optomization_solver_base{
 	public:
 		// need a default constructor to appease Cython
 		stochastic_gradient_descent();
+
+		// initialize with just the model
+		stochastic_gradient_descent(model* M);
 		
 		// does a single step using only set of data
-		VectorXd fit(VectorXd prev, double gamma);
+		VectorXd fit(VectorXd prev, double gamma, MatrixXd X, VectorXd y);
 		// wrapper for Cython to call stochastic_fit
-		vector<double> py_fit(vector<double> prev, double gamma);
+		vector<double> py_fit(vector<double> prev, double gamma, vector< vector<double> > X, vector<double> y);
 };
