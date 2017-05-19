@@ -1,6 +1,7 @@
 # distutils: language = c++
 # distutils: sources = gradient_descent.cpp model.cpp
 from libcpp.vector cimport vector
+from libcpp.string cimport string
 import numpy as np
 
 cdef extern from "gradient_descent.h" :
@@ -18,7 +19,7 @@ cdef extern from "gradient_descent.h" :
 	cdef cppclass batch_gradient_descent(optomization_solver_base):
 		batch_gradient_descent() except + 
 		batch_gradient_descent(vector[ vector[double] ], vector[double], model*) except +
-		vector[double] py_fit(vector[double], double, double) except +
+		vector[double] py_fit(vector[double], double, string, double) except +
 	cdef cppclass stochastic_gradient_descent(optomization_solver_base):
 		stochastic_gradient_descent() except +
 		stochastic_gradient_descent(model*) except +
@@ -64,12 +65,12 @@ cdef class PyBatch_Gradient_Descent(PyOptomization_Solver_Base):
 		cdef model* m = M.modelptr
 		if type(self) is PyBatch_Gradient_Descent:
 			self.batchptr = self.solverptr = new batch_gradient_descent(_x, _y, m)
-	def fit(self, init, double gamma, double precision):
+	def fit(self, init, double gamma, str conversion_type = "none", double conv = 1000000):
 		# convert the parameters
 		cdef vector[double] _init = init
-		# then call the function and convert the resulting
-		# vector[double] to a numpy array
-		cdef vector[double] result = self.batchptr.py_fit(_init, gamma, precision)
+		cdef string s = conversion_type
+		# then call the function and convert the resulting vector[double] to a numpy array
+		cdef vector[double] result = self.batchptr.py_fit(_init, gamma, s, conv)
 		return np.array(list(result))
 
 cdef class PyStochastic_Gradient_Descent(PyOptomization_Solver_Base):

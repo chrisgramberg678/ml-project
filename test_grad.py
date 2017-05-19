@@ -4,7 +4,7 @@ from scipy.stats import bernoulli
 import matplotlib.pyplot as plt
 
 def main():
-	for i in range(1):
+	for i in range(10):
 		print "Seed: {0}".format(i)
 		np.random.seed(i)
 		try:
@@ -22,7 +22,7 @@ def lls_test():
 	y = w.transpose().dot(x).flatten()
 	m = grad.PyLLSModel()
 	gd = grad.PyBatch_Gradient_Descent(x,y,m)
-	ans = gd.fit([0,0],.001,.000000001)
+	ans = gd.fit([0,0],.001,"step_precision",.000000001)
 	print "w was:"
 	print w.flatten()
 	print "we got:"

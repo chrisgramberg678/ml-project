@@ -55,14 +55,23 @@ MatrixXd optomization_solver_base::stl_to_eigen(vector< vector<double> > v){
  * Implementation for the batch_gradient_descent class *
  *******************************************************/
 
-// determines if the values in w are beneath the precision value
-bool batch_gradient_descent::done(VectorXd w, double precision){
-	// convert w to an Array so we can do coefficent-wise ops like abs()
-	ArrayXd temp = w.array();
-	temp = temp.abs();
-	return (temp < precision).all();
+// determine if we're done based on the convergence type
+bool batch_gradient_descent::done(string type, double conv, int iteration, VectorXd step_diff, double loss_diff){
+	if(type.compare("step_precision") == 0){
+		// convert step_diff to an Array so we can do coefficent-wise ops like abs()
+		ArrayXd temp = step_diff.array();
+		temp = temp.abs();
+		return (temp < conv).all();
+	}
+	else if(type.compare("loss_precision") == 0){
+		return abs(loss_diff) < conv;
+	}
+	else if(type.compare("iterations") == 0){
+		return  iteration < conv;
+	}
 }
 
+// variant of done which checks if the change in loss is less than a precision value
 // default constructor to appease Cython
 batch_gradient_descent::batch_gradient_descent(){}
 
@@ -75,31 +84,48 @@ batch_gradient_descent::batch_gradient_descent(MatrixXd X, VectorXd y, model* M)
 batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M):
 	batch_gradient_descent(stl_to_eigen(X),stl_to_eigen(y), M)
 	{}
-// does the actual fitting using gradient descent
-// params: 
-VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precision){
+/* does the actual fitting using gradient descent
+ * params: init - the starting point for the optomization
+ * 		   gamma - the step size
+ *         convergence_type - either "iterations", "loss_precision", "step_precision", or "none"
+ *         conv - either the max iterations or the precision provided by the caller
+ */
+VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string convergence_type, double conv){
 	if(init.rows() != _X.rows()){
 		throw invalid_argument("initial values must have the same size as the number of coefficients");
 	}
+	if(convergence_type.compare("none") != 0 && convergence_type.compare("loss_precision") != 0 && convergence_type.compare("step_precision") != 0 && convergence_type.compare("iterations") != 0){
+		throw invalid_argument("invalid convergence type: " + convergence_type);
+	}
+	// if there is no convergence type provided then we'll just do 1 million iterations
+	if(convergence_type.compare("none") == 0){
+		convergence_type = "iterations";
+		conv = 1000000;
+	}
 	// these are used for iteration
-	VectorXd prev, next, diff(init.rows());
+	VectorXd prev, next, step_diff(init.rows());
 	// starting values for w the weights we're solving for
 	next = init;
-	// fill diff with ones so we can get false from done the first time
+	// fill step_diff with ones so we can get false from done the first time
 	for(int i = 0; i < next.rows(); ++i){
-		diff(i) = 1;
+		step_diff(i) = 1;
 	}
 	double loss = 10000000;
+	double loss_diff = 10000000;
+	loss_values.push_back(loss);
 	int i = 0;
-	while( !done(diff, precision) ){
+	// we'll go until we stop from the convergence condition or we hit a billion iterations, whichever is first
+	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 1000000000 ){
 		prev = next;
 		next = prev - gamma*m->gradient(prev, _X, _y);
-		diff = prev - next;
 		loss = m->loss(next, _X, _y);
 		if(loss == numeric_limits<double>::infinity()){
 			throw runtime_error("we have diverged!");
 		}
 		loss_values.push_back(loss);
+		// update step_diff for the convergence check
+		step_diff = prev - next;
+    	loss_diff = loss_values[loss_values.size() - 1] - loss_values[loss_values.size() - 2];
 	}
 	return next;
 }
@@ -107,8 +133,8 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, double precisi
 // a slightly different version of fit so that I don't have 
 // to wrap Eigen for Cython
 // It calls the normal fit function and moves it into a STL vector so Cython can convert it to numpy
-vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma, double precision){
-	VectorXd ans = fit(stl_to_eigen(init), gamma, precision);
+vector<double> batch_gradient_descent::py_fit(vector<double> init, double gamma, string convergence_type, double conv){
+	VectorXd ans = fit(stl_to_eigen(init), gamma, convergence_type, conv);
 	return eigen_to_stl(ans);
 }
 

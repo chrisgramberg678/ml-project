@@ -56,7 +56,7 @@ int main(){
 		batch_gradient_descent gd(x,y,M);
 		VectorXd res;
 		try {
-			res = gd.fit(init, gamma, precision);
+			res = gd.fit(init, gamma, "precision", precision);
 			ArrayXd temp = (res - ans).array();
 			// if our calculated coefs are within an error of the answer we're good
 			if((temp.abs() < error).all()){

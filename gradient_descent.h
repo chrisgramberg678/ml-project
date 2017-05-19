@@ -42,7 +42,7 @@ class batch_gradient_descent : public optomization_solver_base{
 		VectorXd _y;
 
 		// helper for the main loop in fit
-		bool done(VectorXd w, double precision);
+		bool done(string type, double conv, int iteration, VectorXd step_diff, double loss_diff);
 
 	public:
 		// need a default constructor to appease Cython
@@ -59,11 +59,11 @@ class batch_gradient_descent : public optomization_solver_base{
 		batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M);
 
 		// does the actual work of fitting a model to the data
-		VectorXd fit(VectorXd init, double gamma, double precision);
+		VectorXd fit(VectorXd init, double gamma, string convergence_type = "none", double conv = 1000000);
 
 		// a slightly different version of fit so that I don't have to wrap the VexctorXd class for Cython
 		// This works because Cython comes with automatic conversion from STL vectors to Python lists
-		vector<double> py_fit(vector<double> init, double gamma, double precision);
+		vector<double> py_fit(vector<double> init, double gamma, string convergence_type = "none", double conv = 1000000);
 };
 
 
