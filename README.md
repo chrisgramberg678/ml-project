@@ -12,11 +12,11 @@ This will create grad.so which can be imported into Python using `import grad` l
 
 To use this library you'll need to intialize a model as: 
 
-`m = grad.PyLLSModel()`
+`m = grad.PyLLSModel()` or `m = grad.PyBLRModel()`
 
 and then use that model to initialize a optomization solver object:
 
-`gd = PyBatch Gradient_Descent(X,y, m)`
+`gd = PyBatch Gradient_Descent(X,y, m)` or `gd = grad.PyStochastic_Gradient_Descent(m)`
 
 Here, `X` is defined as a dxn Matrix where n is the number of data points and d is the dimensionality of each point. `y` is defined as a 1xn vector of labels for the n data points.
 
@@ -36,9 +36,17 @@ strings:
 
 These two parameters are optional and their default values are "iterations" and 1000000
 
-Regardless of the convergence type you pass in the fit function will stop after 1,000,000,000 iterations or if the loss value (which is calculated at each step) gets to the value `numeric_limits<double>::infinity` given by Eigen.
+Regardless of the convergence type you pass in the fit function will stop after 1,000,000,000 iterations or if the loss value (which is calculated at each step) gets to the value `numeric_limits<double>::infinity()`.
 
-To test the C++ code on it's own compile using:
+The `fit()` function for stochastic gradient descent works similarly:
+
+`gd.fit(prev,step_size,X,y)`
+
+however instead of taking an ititial value and computing the fit based on some precision value, it takes a single step. Here X can either be a single data point in the form of a column vector with a single label y, or a matrix of datapoints with a vector of labels y.
+
+All solvers have a function called `get_loss()` which gives a list of all loss values. The batch gradient descent solver stores a loss value for each iteration of its main loop and the stochastic solver stores a loss value for each call to `fit()`.
+
+It's sometimes useful to compile the C++ library only in order to run tests to ensure it is working before writing the interface to python for new features. To test the C++ code on it's own compile using:
 
 `g++ -std=c++11 model.cpp gradient_descent.cpp test_gradient_descent.cpp -o gradient_descent`
 
