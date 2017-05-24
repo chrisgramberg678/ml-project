@@ -49,7 +49,7 @@ def log_reg_test():
 	gd = grad.PyBatch_Gradient_Descent(x,y,m)
 	print "w was:"
 	print w.flatten()
-	ans = gd.fit([0,0,0,0],.00001,.000000001)
+	ans = gd.fit([0,0,0,0],.00001, "step_precision",.000000001)
 	print "we got:"
 	print ans
 
