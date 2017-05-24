@@ -40,7 +40,7 @@ VectorXd test_prep(MatrixXd& X, VectorXd& y, VectorXd& init, int coefficients, i
 int main(){
 	srand(1);
 	double gamma = .001;
-	double precision = .000000001;
+	double precision = .0000001;
 	// counts the number of times we're off by error
 	int bad = 0;
 	double error = .2;
@@ -48,7 +48,7 @@ int main(){
 	// binary_logistic_regression_model m;
 	model* M = &m;
 
-	for(int i = 0; i < 20; ++i){
+	for(int i = 1; i < 20; ++i){
 		cout << "coefficients: " << i << endl;
 		MatrixXd x;
 		VectorXd y, ans, init;
@@ -56,7 +56,7 @@ int main(){
 		batch_gradient_descent gd(x,y,M);
 		VectorXd res;
 		try {
-			res = gd.fit(init, gamma, "precision", precision);
+			res = gd.fit(init, gamma, "step_precision", precision);
 			ArrayXd temp = (res - ans).array();
 			// if our calculated coefs are within an error of the answer we're good
 			if((temp.abs() < error).all()){

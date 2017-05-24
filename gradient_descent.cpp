@@ -116,6 +116,7 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string converg
 	int i = 0;
 	// we'll go until we stop from the convergence condition or we hit a billion iterations, whichever is first
 	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 1000000000 ){
+		++i;
 		prev = next;
 		next = prev - gamma*m->gradient(prev, _X, _y);
 		loss = m->loss(next, _X, _y);
@@ -123,10 +124,10 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string converg
 			throw runtime_error("we have diverged!");
 		}
 		loss_values.push_back(loss);
-		// update step_diff for the convergence check
+		// update the diffs for the convergence check
 		step_diff = prev - next;
     	loss_diff = loss_values[loss_values.size() - 1] - loss_values[loss_values.size() - 2];
-	}
+    }
 	return next;
 }
 
