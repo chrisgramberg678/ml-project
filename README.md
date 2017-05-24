@@ -46,6 +46,8 @@ however instead of taking an ititial value and computing the fit based on some p
 
 All solvers have a function called `get_loss()` which gives a list of all loss values. The batch gradient descent solver stores a loss value for each iteration of its main loop and the stochastic solver stores a loss value for each call to `fit()`.
 
+The file test_grad.py contains some simple tests which demonstrate how to use the library.
+
 It's sometimes useful to compile the C++ library only in order to run tests to ensure it is working before writing the interface to python for new features. To test the C++ code on it's own compile using:
 
 `g++ -std=c++11 model.cpp gradient_descent.cpp test_gradient_descent.cpp -o gradient_descent`
