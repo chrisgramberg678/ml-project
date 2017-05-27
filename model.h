@@ -3,9 +3,11 @@
 // or a binary logistic model to do binary clasification
 
 #include <Eigen/Dense>
+#include <iostream>
 #include "math.h"
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using namespace std;
 
 class model{
 	public:
