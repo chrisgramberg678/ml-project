@@ -18,15 +18,15 @@ This can be solved using the command: `sudo chmod -R a+rX,u+w /var/cache/app-inf
 
 and an explantion can be found [here](https://askubuntu.com/questions/761592/unable-to-apt-get-dist-upgrade-on-a-persistent-ubuntu-16-04-usb)
 
-Next you'll need git... `sudo apt install git`
+Next you'll need git `sudo apt install git`
 
-... so you can clone this repo: `git clone https://github.com/chrisgramberg678/ml-project.git` 
+so you can clone this repo: `git clone https://github.com/chrisgramberg678/ml-project.git` 
 
 ### Pip and Python dependencies
 
 Install pip using `sudo apt-get install python-pip` 
 
-and make sure it's updated to the latest version using: pip install --upgrade pip
+and make sure it's updated to the latest version using: `pip install --upgrade pip`
 
 Then install numpy, scipy, and cython using `pip install numpy scipy cython` (this may require sudo)
 
@@ -52,6 +52,8 @@ sudo make install
 To use this as a Python module compile it using the command: 
 
 `python gradient_descent_setup.py build_ext --inplace -I /usr/local/include/eigen3`
+
+To see an example run `python test_grad.py`. You can change the function call on line 11 of this file to see the different tests I've set up.
 
 This will create grad.so which can be imported into Python using `import grad` like a normal python module.
 
