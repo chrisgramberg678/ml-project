@@ -53,9 +53,9 @@ To use this as a Python module compile it using the command:
 
 `python gradient_descent_setup.py build_ext --inplace -I /usr/local/include/eigen3`
 
-To see an example run `python test_grad.py`. You can change the function call on line 11 of this file to see the different tests I've set up.
-
 This will create grad.so which can be imported into Python using `import grad` like a normal python module.
+
+To see an example run `python test_grad.py`. You can change the function call on line 11 of this file to see the different tests I've set up.
 
 To use this library you'll need to intialize a model as: 
 
