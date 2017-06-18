@@ -12,38 +12,36 @@ using Eigen::VectorXd;
 using namespace std;
 
 class kernel{
-	// the base class for kernel's only provides the nullary constructor
+	// the base class for kernels only provides the nullary constructor
 	// child classes are expected to provide constructors for initializing their parameters
+	// as well as the implementation for k
 	public:
-		virtual double k(VectorXd x_i, VectorXd y_j);
+		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
 		MatrixXd gram_matrix(MatrixXd X, MatrixXd Y);
 };
 
-class linear_kernel{
+class linear_kernel : public kernel{
 	private:
 		double _c;
 	public:
-		// http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#linear
 		linear_kernel(double c);
 		double k(VectorXd x_i, VectorXd y_j);
 };
 
-class polynomial_kernel{
+class polynomial_kernel : public kernel{
 	private:
 		double _a, _c, _d;
 
 	public:
-		//http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#polynomial
 		polynomial_kernel(double a, double c, double d);
 		double k(VectorXd x_i, VectorXd y_j);
 };
 
-class gaussian_kernel{
+class gaussian_kernel : public kernel{
 	private:
 		// sigma
 		double _s;
 	public:
-		// http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#gaussian
-		polynomial_kernel(double s);
+		gaussian_kernel(double s);
 		double k(VectorXd x_i, VectorXd y_j);
 };
