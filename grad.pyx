@@ -64,6 +64,18 @@ cdef class PyLinearKernel(PyKernel):
 		if type(self) is PyLinearKernel:
 			self.lkptr = self.kernelptr = new linear_kernel(c)
 
+cdef class PyPolynomialKernel(PyKernel):
+	cdef polynomial_kernel* pkptr
+	def __cinit__(self, a, c, d):
+		if type(self) is PyPolynomialKernel:
+			self.pkptr = self.kernelptr = new polynomial_kernel(a,c,d)
+
+cdef class PyGaussianKernel(PyKernel):
+	cdef gaussian_kernel* gkptr
+	def __cinit__(self, s):
+		if type(self) is PyGaussianKernel:
+			self.gkptr = self.kernelptr = new gaussian_kernel(s)
+
 # the python classes that wrap around the c++ classes for models
 cdef class PyModel:
 	cdef model* modelptr
