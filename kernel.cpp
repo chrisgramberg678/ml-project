@@ -27,6 +27,11 @@ MatrixXd kernel::gram_matrix(MatrixXd X, MatrixXd Y){
 	return result;
 }
 
+vector< vector<double> > kernel::py_gram_matrix(vector< vector<double> > X, vector< vector<double> > Y){
+	MatrixXd ans = gram_matrix(stl_to_eigen(X), stl_to_eigen(Y));
+	return eigen_to_stl(ans);
+}
+
 /* Implementation for the linear_kernel class */
 
 linear_kernel::linear_kernel(double c):

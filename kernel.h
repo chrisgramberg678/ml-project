@@ -4,44 +4,42 @@
  * ie: linear, polynomial, gaussian
  */
 
-#include <Eigen/Dense>
-#include <iostream>
-#include "math.h"
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using namespace std;
+#include "utilities.h"
 
 class kernel{
 	// the base class for kernels only provides the nullary constructor
 	// child classes are expected to provide constructors for initializing their parameters
 	// as well as the implementation for k
-	public:
+	private:
 		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
+	public:
 		MatrixXd gram_matrix(MatrixXd X, MatrixXd Y);
+		// for Cython
+		vector< vector<double> > py_gram_matrix(vector< vector<double> > X, vector< vector<double> > Y); 
 };
 
 class linear_kernel : public kernel{
 	private:
 		double _c;
+		double k(VectorXd x_i, VectorXd y_j);
 	public:
 		linear_kernel(double c);
-		double k(VectorXd x_i, VectorXd y_j);
 };
 
 class polynomial_kernel : public kernel{
 	private:
 		double _a, _c, _d;
+		double k(VectorXd x_i, VectorXd y_j);
 
 	public:
 		polynomial_kernel(double a, double c, double d);
-		double k(VectorXd x_i, VectorXd y_j);
 };
 
 class gaussian_kernel : public kernel{
 	private:
 		// sigma
 		double _s;
+		double k(VectorXd x_i, VectorXd y_j);
 	public:
 		gaussian_kernel(double s);
-		double k(VectorXd x_i, VectorXd y_j);
 };

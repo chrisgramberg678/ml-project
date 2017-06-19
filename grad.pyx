@@ -1,11 +1,22 @@
 # distutils: language = c++
-# distutils: sources = gradient_descent.cpp model.cpp
+# distutils: sources = gradient_descent.cpp model.cpp kernel.cpp utilities.cpp
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 import numpy as np
 
+cdef extern from "kernel.h" :
+	cdef cppclass kernel:
+		kernel() except +
+		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) 
+	cdef cppclass linear_kernel(kernel):
+		linear_kernel(double) except +
+	cdef cppclass polynomial_kernel(kernel):
+		polynomial_kernel(double, double, double) except +
+	cdef cppclass gaussian_kernel(kernel):
+		gaussian_kernel(double) except +
+
 cdef extern from "gradient_descent.h" :
-	# model base classes
+	# model classes
 	cdef cppclass model:
 		model() except +
 	cdef cppclass linear_least_squares_model(model):
@@ -24,6 +35,34 @@ cdef extern from "gradient_descent.h" :
 		stochastic_gradient_descent() except +
 		stochastic_gradient_descent(model*) except +
 		vector[double] py_fit(vector[double], double, vector[ vector[double] ], vector[double]) except +
+
+# helper for converting numpy matrices to vector[ vector[double] ]
+# this is mostly just a check to see if we need to force row vectors to be column vectors
+def np_to_stl(m):
+	cdef vector[ vector[double] ] _m
+	if m.ndim == 2:
+		_m = list(list(m))
+	elif m.ndim ==1:
+		a = m.shape[0]
+		m.shape = (a,1)
+		_m = list(list(m))
+	return _m
+
+# classes for kernels
+
+cdef class PyKernel:
+	cdef kernel* kernelptr
+	def __cinit__(self):
+		# you're not allowed to make instances of this class so we're not going to do anything if you try
+		pass
+	def gram_matrix(self,X,Y):
+		return self.kernelptr.py_gram_matrix(np_to_stl(X),np_to_stl(Y))
+
+cdef class PyLinearKernel(PyKernel):
+	cdef linear_kernel* lkptr
+	def __cinit__(self, c):
+		if type(self) is PyLinearKernel:
+			self.lkptr = self.kernelptr = new linear_kernel(c)
 
 # the python classes that wrap around the c++ classes for models
 cdef class PyModel:
@@ -54,7 +93,7 @@ cdef class PyOptomization_Solver_Base:
 		# simply call the function on the pointer
 		return np.array(list(self.solverptr.get_loss()))
 
-
+# classes for our solvers
 cdef class PyBatch_Gradient_Descent(PyOptomization_Solver_Base):
 	# the C++ object that does gradient_descent
 	cdef batch_gradient_descent* batchptr	
@@ -83,16 +122,10 @@ cdef class PyStochastic_Gradient_Descent(PyOptomization_Solver_Base):
 	def fit(self, prev, double gamma, x, y):
 		cdef vector[double] _prev = list(prev)
 		# we need to check whether this x has 1 data point or many
-		cdef vector[ vector[double] ] _x
 		cdef vector[double] _y
-		if x.ndim == 2 and y.ndim == 1:
-			_x = list(list(x))
+		if y.ndim == 1:
 			_y = list(y)
-		elif x.ndim == 1 and y.ndim == 0:
-			# since this x is only a single xi we want it to have the shape of a column vector
-			a = x.shape[0]
-			x.shape = (a,1)
-			_x = list(list(x))
+		elif y.ndim == 0:
 			_y.push_back(y)
-		cdef vector[double] res = self.stochasticptr.py_fit(_prev, gamma, _x, _y)
+		cdef vector[double] res = self.stochasticptr.py_fit(_prev, gamma, np_to_stl(x), _y)
 		return np.array(list(res))
