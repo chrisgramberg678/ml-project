@@ -7,7 +7,7 @@ import numpy as np
 cdef extern from "kernel.h" :
 	cdef cppclass kernel:
 		kernel() except +
-		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) 
+		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) except +
 	cdef cppclass linear_kernel(kernel):
 		linear_kernel(double) except +
 	cdef cppclass polynomial_kernel(kernel):
@@ -56,7 +56,7 @@ cdef class PyKernel:
 		# you're not allowed to make instances of this class so we're not going to do anything if you try
 		pass
 	def gram_matrix(self,X,Y):
-		return self.kernelptr.py_gram_matrix(np_to_stl(X),np_to_stl(Y))
+		return np.array(self.kernelptr.py_gram_matrix(np_to_stl(X),np_to_stl(Y)))
 
 cdef class PyLinearKernel(PyKernel):
 	cdef linear_kernel* lkptr

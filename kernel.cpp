@@ -65,5 +65,5 @@ gaussian_kernel::gaussian_kernel(double s):
 
 // http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#gaussian
 double gaussian_kernel::k(VectorXd x_i, VectorXd y_j){
-	return exp((x_i - y_j).array().square().sum() / 2 * _s * _s);
+	return exp(-1 * (x_i - y_j).array().square().sum() / (2 * _s * _s));
 }
