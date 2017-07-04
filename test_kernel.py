@@ -112,5 +112,5 @@ class TestKernels(unittest.TestCase):
 		y = np.random.rand(2000,2000)
 		self.compare_to_sklearn(x, y)
 
-if __name__ == '__main__':
-    unittest.main()
+suite = unittest.TestLoader().loadTestsFromTestCase(TestKernels)
+unittest.TextTestRunner(verbosity=2).run(suite)
