@@ -26,34 +26,35 @@ class TestKernels(unittest.TestCase):
 		"""Helper for comparing the three kernels to avoid copy-pasting """
 		sk_lk = linear_kernel(x.transpose(), y.transpose())
 		my_lk = self.lk.gram_matrix(x, y)
-		self.assertTrue(np.array_equal(my_lk, sk_lk))
+		self.assertTrue(np.allclose(my_lk, sk_lk))
 
 		sk_pk = polynomial_kernel(x.transpose(), y.transpose(), self.pd, self.pa, self.pc)
 		my_pk = self.pk.gram_matrix(x, y)
-		self.assertTrue(np.array_equal(my_pk, sk_pk))
+		self.assertTrue(np.allclose(my_pk, sk_pk))
 
 		sk_gk = rbf_kernel(x.transpose(), y.transpose(), self.g)
 		my_gk = self.gk.gram_matrix(x, y)
-		self.assertTrue(np.array_equal(my_gk, sk_gk))
+		self.assertTrue(np.allclose(my_gk, sk_gk))
 
 	# we're expecting exceptions here so there's no need to compare anything
 	def check_exceptions(self, x, y):
 		message = "to compute a Gram Matrix both input matrices must have the same number of rows."
+		failed = "we should have gotten an exception here"
 		try:
 			my_lk = self.lk.gram_matrix(x, y)
-			self.assertTrue(False)
+			self.fail(failed)
 		except Exception as e:
 			self.assertTrue(e.message, message)
 
 		try:
 			my_pk = self.pk.gram_matrix(x, y)
-			self.assertTrue(False)
+			self.fail(failed)
 		except Exception as e:
 			self.assertTrue(e.message, message)
 
 		try:
 			my_gk = self.gk.gram_matrix(x, y)
-			self.assertTrue(False)
+			self.fail(failed)
 		except Exception as e:
 			self.assertTrue(e.message, message)
 
@@ -102,7 +103,14 @@ class TestKernels(unittest.TestCase):
 	def test_2diff_samples_matrices_bad(self):
 		x = np.array([[1,2],[3,4],[5,6]])
 		y = np.array([[1,2,3],[4,5,6]])
-		self.check_exceptions(x, y )
+		self.check_exceptions(x, y)
+
+	@unittest.skip("this one takes forever")
+	def test_stress(self):
+		"""Let's see what happens when we use big input"""
+		x = np.random.rand(2000,2000)
+		y = np.random.rand(2000,2000)
+		self.compare_to_sklearn(x, y)
 
 if __name__ == '__main__':
     unittest.main()
