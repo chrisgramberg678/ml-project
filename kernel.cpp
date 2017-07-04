@@ -54,7 +54,8 @@ polynomial_kernel::polynomial_kernel(double a, double c, double d):
 //http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#polynomial
 double polynomial_kernel::k(VectorXd x_i, VectorXd y_j){
 	double dot = x_i.transpose() * y_j;
-	return pow((_a * dot +_c),_d);
+	double base = _a * dot + _c;
+	return pow(base,_d);
 }
 
 /* Implementation for the gaussian_kernel class */

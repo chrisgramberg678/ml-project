@@ -1,45 +1,108 @@
-# super simple sanity check for kernels
+# unit tests for kernels
+import unittest
 import grad
 import numpy as np
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.metrics.pairwise import polynomial_kernel
 from sklearn.metrics.pairwise import rbf_kernel
 
-# constants for filters
+class TestKernels(unittest.TestCase):
+	"""Tests for kernels"""
 
-#linear
-lc = 0 
+	# constants for filters and kernels
+	#polynomial
+	pa = 1.5
+	pc = .2
+	pd = 3
+	#rbf/gaussian
+	gs = .5
+	g = 1/(2*gs*gs)
+	# my kernels
+	lk = grad.PyLinearKernel(0)
+	pk = grad.PyPolynomialKernel(pa,pc,pd)
+	gk = grad.PyGaussianKernel(gs)
 
-#polynomial
-pa = 1
-pc = 0
-pd = 1
+	def compare_to_sklearn(self, x, y):
+		"""Helper for comparing the three kernels to avoid copy-pasting """
+		sk_lk = linear_kernel(x.transpose(), y.transpose())
+		my_lk = self.lk.gram_matrix(x, y)
+		self.assertTrue(np.array_equal(my_lk, sk_lk))
 
-#rbf/gaussian
-gs = .5
-g = 1/(2*gs*gs)
+		sk_pk = polynomial_kernel(x.transpose(), y.transpose(), self.pd, self.pa, self.pc)
+		my_pk = self.pk.gram_matrix(x, y)
+		self.assertTrue(np.array_equal(my_pk, sk_pk))
 
-# my kernels
-lk = grad.PyLinearKernel(lc)
-pk = grad.PyPolynomialKernel(pa,pc,pd)
-gk = grad.PyGaussianKernel(gs)
+		sk_gk = rbf_kernel(x.transpose(), y.transpose(), self.g)
+		my_gk = self.gk.gram_matrix(x, y)
+		self.assertTrue(np.array_equal(my_gk, sk_gk))
 
-# test data 
-x = np.array([[1,2],[3,4]])
-y = np.array([[5,6],[7,8]])
+	# we're expecting exceptions here so there's no need to compare anything
+	def check_exceptions(self, x, y):
+		message = "to compute a Gram Matrix both input matrices must have the same number of rows."
+		try:
+			my_lk = self.lk.gram_matrix(x, y)
+			self.assertTrue(False)
+		except Exception as e:
+			self.assertTrue(e.message, message)
 
+		try:
+			my_pk = self.pk.gram_matrix(x, y)
+			self.assertTrue(False)
+		except Exception as e:
+			self.assertTrue(e.message, message)
 
-print "sklearn linear kernel gram matrix"
-print linear_kernel(x,y)
-print "my linear kernel gram matrix"
-print lk.gram_matrix(x,y)
-print "sklearn linear kernel gram matrix with transpose of the data"
-print linear_kernel(x.transpose(),y.transpose())
+		try:
+			my_gk = self.gk.gram_matrix(x, y)
+			self.assertTrue(False)
+		except Exception as e:
+			self.assertTrue(e.message, message)
 
-# print "polynomial"
-# print polynomial_kernel(x,y,pa,pc,pd)
-# print pk.gram_matrix(x,y)
+	def test_2vectors_good(self):
+		# test data 
+		x = np.array([1,2,3,4])
+		y = np.array([5,6,7,8])
+		x.shape = y.shape = (4,1)
+		self.compare_to_sklearn(x, y)
 
-# print "rbf/gaussian"
-# print rbf_kernel(x,y,g)
-# print gk.gram_matrix(x,y,gs)
+	def test_2vectors_bad(self):
+		# note the mismatch in shapes here
+		x = np.array([1,2,3])
+		y = np.array([1,2])
+		x.shape = (3,1)
+		y.shape = (2,1)
+		self.check_exceptions(x, y)
+
+	def test_1vector_1matrix_good(self):
+		x = np.array([1,2])
+		x.shape = (2,1)
+		y = np.array([[1,2],[3,4]])
+		self.compare_to_sklearn(x, y)
+
+	def test_1vector_1matrix_bad(self):
+		x = np.array([1,2,3])
+		x.shape = (3,1)
+		y = np.array([[1,2],[3,4]])
+		self.check_exceptions(x, y)
+
+	def test_2same_samples_matrices_good(self):
+		x = np.array([[1,2,3],[4,5,6]])
+		y = np.array([[7,8,9],[1,2,3]])
+		self.compare_to_sklearn(x, y)
+
+	def test_2same_samples_matrices_bad(self):
+		x = np.array([[1,2],[3,4]])
+		y = np.array([[1,2,3],[4,5,6]])
+		self.check_exceptions(x, y)
+
+	def test_2diff_samples_matrices_good(self):
+		x = np.array([[1,2],[3,4]])
+		y = np.array([[9,8,7],[6,5,4]])
+		self.compare_to_sklearn(x, y)
+
+	def test_2diff_samples_matrices_bad(self):
+		x = np.array([[1,2],[3,4],[5,6]])
+		y = np.array([[1,2,3],[4,5,6]])
+		self.check_exceptions(x, y )
+
+if __name__ == '__main__':
+    unittest.main()

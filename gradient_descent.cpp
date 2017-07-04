@@ -84,6 +84,7 @@ batch_gradient_descent::batch_gradient_descent(MatrixXd X, VectorXd y, model* M)
 batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M):
 	batch_gradient_descent(stl_to_eigen(X),stl_to_eigen(y), M)
 	{}
+	
 /* does the actual fitting using gradient descent
  * params: init - the starting point for the optomization
  * 		   gamma - the step size
