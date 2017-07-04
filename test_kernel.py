@@ -105,7 +105,7 @@ class TestKernels(unittest.TestCase):
 		y = np.array([[1,2,3],[4,5,6]])
 		self.check_exceptions(x, y)
 
-	@unittest.skip("this one takes forever")
+	@unittest.skip("this one takes about 50 seconds on my laptop")
 	def test_stress(self):
 		"""Let's see what happens when we use big input"""
 		x = np.random.rand(2000,2000)
