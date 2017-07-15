@@ -2,12 +2,7 @@
 // for example, we might use the linear least sqaures model for linear regression 
 // or a binary logistic model to do binary clasification
 
-#include <Eigen/Dense>
-#include <iostream>
-#include "math.h"
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using namespace std;
+#include "kernel.h"
 
 class model{
 	public:
@@ -28,4 +23,17 @@ class binary_logistic_regression_model : public model{
 		binary_logistic_regression_model();
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);
+};
+
+class kernel_binary_logistic_regression_model: public model{
+	private:
+		double _lambda;
+		kernel* _k;
+		MatrixXd _KXX;
+		bool first;
+	public:
+		kernel_binary_logistic_regression_model();
+		kernel_binary_logistic_regression_model(kernel* k, double lambda);
+		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
+		double loss(VectorXd w, MatrixXd X, VectorXd y);		
 };

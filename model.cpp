@@ -54,3 +54,34 @@ double binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y
 	return loss;
 }
 
+// **********************************************************
+// Implementation of logistic regression model with kernels *
+// **********************************************************
+
+kernel_binary_logistic_regression_model::kernel_binary_logistic_regression_model(){}
+
+kernel_binary_logistic_regression_model::kernel_binary_logistic_regression_model(kernel* k, double lambda):
+	_lambda(lambda),
+	_k(k),
+	first(true)
+	{}
+
+VectorXd kernel_binary_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
+	if(first){
+		_KXX = _k->gram_matrix(X, X);
+		first = false;
+	}
+	VectorXd result(w.rows());
+	for(int i = 0; i < X.cols(); ++i){
+		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
+		double e = exp(w.transpose() * kxx_i);
+		double id = (y(i) == 0 ? 1 : 0);
+		result -= ((e / e + 1) * kxx_i) + _KXX * w * _lambda;
+	}
+	result /= X.cols();
+	return result;
+}
+
+double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
+	return 0;
+}
