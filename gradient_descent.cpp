@@ -69,6 +69,9 @@ bool batch_gradient_descent::done(string type, double conv, int iteration, Vecto
 	else if(type.compare("iterations") == 0){
 		return  iteration < conv;
 	}
+	else{
+		throw invalid_argument("invalid convergence type: " + type);
+	}
 }
 
 // variant of done which checks if the change in loss is less than a precision value
@@ -116,7 +119,7 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string converg
 	loss_values.push_back(loss);
 	int i = 0;
 	// we'll go until we stop from the convergence condition or we hit a billion iterations, whichever is first
-	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 1000000000 ){
+	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 2 ){
 		++i;
 		prev = next;
 		next = prev - gamma*m->gradient(prev, _X, _y);

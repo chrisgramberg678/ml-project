@@ -4,11 +4,11 @@ from scipy.stats import bernoulli
 import matplotlib.pyplot as plt
 
 def main():
-	for i in range(10):
+	for i in range(1):
 		print "Seed: {0}".format(i)
 		np.random.seed(i)
 		try:
-			lls_test()
+			kernel_log_reg_test()
 		except RuntimeError as e:
 			print "Runtime Error: {0}".format(e)
 
@@ -36,11 +36,11 @@ def lls_test():
 
 def log_reg_test():
 	print "binary logistic regression test:"
-	x = 10 * np.random.randn(4,100)
+	x = 10 * np.random.randn(2,100)
 	# 2 coefficients 
-	w = np.random.rand(4)
+	w = np.random.rand(2)
 	# force it to be a column vector
-	w.shape = (4,1)
+	w.shape = (2,1)
 	# for the bernoulli distribution which will give us y
 	logit = np.exp(w.transpose().dot(x))/(1+np.exp(w.transpose().dot(x)))
 	y = bernoulli.rvs(logit)
@@ -49,9 +49,35 @@ def log_reg_test():
 	gd = grad.PyBatch_Gradient_Descent(x,y,m)
 	print "w was:"
 	print w.flatten()
-	ans = gd.fit([0,0,0,0],.00001, "step_precision",.000000001)
+	ans = gd.fit([0,0],.001, "step_precision",.000000001)
 	print "we got:"
 	print ans
+	print ""
+
+def kernel_log_reg_test():
+	print "kernel binary logistic regression test:"
+	x = 10 * np.random.randn(2,10)
+	# 2 coefficients 
+	w = np.random.rand(2)
+	# force it to be a column vector
+	w.shape = (2,1)
+	# for the bernoulli distribution which will give us y
+	logit = np.exp(w.transpose().dot(x))/(1+np.exp(w.transpose().dot(x)))
+	y = bernoulli.rvs(logit)
+	# init the model
+	k = grad.PyLinearKernel(0)
+	m = grad.PyKernelBLRModel(k, 1)
+	print "x"
+	print x
+	print "y"
+	print y
+	gd = grad.PyBatch_Gradient_Descent(x,y,m)
+	print "w was:"
+	print w.flatten()
+	ans = gd.fit(np.zeros(2),.001, "step_precision",.000000001)
+	print "we got:"
+	print ans
+	print ""
 
 def stochastic_test():
 	print "stochastic test:"

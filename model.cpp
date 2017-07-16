@@ -42,6 +42,7 @@ VectorXd binary_logistic_regression_model::gradient(VectorXd w, MatrixXd X, Vect
 	for(int i = 0; i < X.cols(); ++i){
 		result += (( exp(w.transpose() * X.col(i)) / (1 + exp(w.transpose() * X.col(i)))) - y(i)) * X.col(i);
 	}
+	result /=X.cols();
 	return result;
 }
 
@@ -51,6 +52,7 @@ double binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y
 	for(int i = 0; i < X.cols(); ++i){
 		loss += log(1+exp(w.transpose() * X.col(i))) - (y(i) * w.transpose() * X.col(i));
 	}
+	loss /=X.cols();
 	return loss;
 }
 
@@ -72,16 +74,32 @@ VectorXd kernel_binary_logistic_regression_model::gradient(VectorXd w, MatrixXd 
 		first = false;
 	}
 	VectorXd result(w.rows());
+	for(int j = 0; j < w.rows(); ++j){
+		result(j) = 0;
+	}
+	cout << _KXX.rows() << "," << _KXX.cols() << "," << w.rows() << endl;
 	for(int i = 0; i < X.cols(); ++i){
 		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
-		double e = exp(w.transpose() * kxx_i);
+		double e = exp(w.transpose() * (kxx_i));
 		double id = (y(i) == 0 ? 1 : 0);
-		result -= ((e / e + 1) * kxx_i) + _KXX * w * _lambda;
+		result -= (((e/(e+1) - id) * kxx_i) + ((_KXX * w )* _lambda))/X.cols();
 	}
-	result /= X.cols();
+	// this right here is what I'm confused about.
+	cout << result.rows() << "," << w.rows() << endl; 
 	return result;
 }
 
 double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
-	return 0;
+	double loss = 0;
+	for(int i = 0; i < X.cols(); ++i){
+		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
+		double e = exp(w.transpose() * kxx_i);
+		double id = (y(i) == 0 ? 1 : 0);
+		loss -= log(1 + e);
+		double temp = w.transpose() * kxx_i;
+		loss -= temp * id;
+		loss += (_lambda/2 * (w.transpose() * _KXX)* w);
+	}
+	loss /= X.cols();
+	return loss;
 }

@@ -4,16 +4,6 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 import numpy as np
 
-cdef extern from "kernel.h" :
-	cdef cppclass kernel:
-		kernel() except +
-		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) except +
-	cdef cppclass linear_kernel(kernel):
-		linear_kernel(double) except +
-	cdef cppclass polynomial_kernel(kernel):
-		polynomial_kernel(double, double, double) except +
-	cdef cppclass gaussian_kernel(kernel):
-		gaussian_kernel(double) except +
 
 cdef extern from "gradient_descent.h" :
 	# model classes
@@ -23,6 +13,8 @@ cdef extern from "gradient_descent.h" :
 		linear_least_squares_model() except +
 	cdef cppclass binary_logistic_regression_model(model):
 		binary_logistic_regression_model() except +
+	cdef cppclass kernel_binary_logistic_regression_model(model):
+		kernel_binary_logistic_regression_model(kernel*, double)
 	# optomization solver classes
 	cdef cppclass optomization_solver_base:
 		optomization_solver_base() except +
@@ -35,6 +27,15 @@ cdef extern from "gradient_descent.h" :
 		stochastic_gradient_descent() except +
 		stochastic_gradient_descent(model*) except +
 		vector[double] py_fit(vector[double], double, vector[ vector[double] ], vector[double]) except +
+	cdef cppclass kernel:
+		kernel() except +
+		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) except +
+	cdef cppclass linear_kernel(kernel):
+		linear_kernel(double) except +
+	cdef cppclass polynomial_kernel(kernel):
+		polynomial_kernel(double, double, double) except +
+	cdef cppclass gaussian_kernel(kernel):
+		gaussian_kernel(double) except +
 
 # helper for converting numpy matrices to vector[ vector[double] ]
 # this is mostly just a check to see if we need to force row vectors to be column vectors
@@ -94,6 +95,13 @@ cdef class PyBLRModel(PyModel):
 	def __cinit__ (self):
 		if type(self) is PyBLRModel:
 			self.BLRptr = self.modelptr = new binary_logistic_regression_model()
+
+cdef class PyKernelBLRModel(PyModel):
+	cdef kernel_binary_logistic_regression_model* KBLRptr
+	def __cinit__(self, PyKernel k, l):
+		if type(self) is PyKernelBLRModel:
+			self.KBLRptr = self.modelptr = new kernel_binary_logistic_regression_model(k.kernelptr, l)
+
 
 # the python class that wraps around the C++ classes for optomization solvers
 cdef class PyOptomization_Solver_Base:
