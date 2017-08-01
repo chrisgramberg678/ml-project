@@ -67,7 +67,7 @@ bool batch_gradient_descent::done(string type, double conv, int iteration, Vecto
 		return abs(loss_diff) < conv;
 	}
 	else if(type.compare("iterations") == 0){
-		return  iteration < conv;
+		return  iteration > conv;
 	}
 	else{
 		throw invalid_argument("invalid convergence type: " + type);
@@ -95,9 +95,9 @@ batch_gradient_descent::batch_gradient_descent(vector< vector<double> > X, vecto
  *         conv - either the max iterations or the precision provided by the caller
  */
 VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string convergence_type, double conv){
-	if(init.rows() != _X.rows()){
-		throw invalid_argument("initial values must have the same size as the number of coefficients");
-	}
+	// if(init.rows() != _X.rows()){
+	// 	throw invalid_argument("initial values must have the same size as the number of coefficients");
+	// }
 	if(convergence_type.compare("none") != 0 && convergence_type.compare("loss_precision") != 0 && convergence_type.compare("step_precision") != 0 && convergence_type.compare("iterations") != 0){
 		throw invalid_argument("invalid convergence type: " + convergence_type);
 	}
@@ -119,7 +119,7 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string converg
 	loss_values.push_back(loss);
 	int i = 0;
 	// we'll go until we stop from the convergence condition or we hit a billion iterations, whichever is first
-	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 2 ){
+	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 1000000000){
 		++i;
 		prev = next;
 		next = prev - gamma*m->gradient(prev, _X, _y);

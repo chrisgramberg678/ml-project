@@ -4,11 +4,11 @@ from scipy.stats import bernoulli
 import matplotlib.pyplot as plt
 
 def main():
-	for i in range(1):
+	for i in range(10):
 		print "Seed: {0}".format(i)
 		np.random.seed(i)
 		try:
-			kernel_log_reg_test()
+			lls_test()
 		except RuntimeError as e:
 			print "Runtime Error: {0}".format(e)
 
@@ -44,6 +44,7 @@ def log_reg_test():
 	# for the bernoulli distribution which will give us y
 	logit = np.exp(w.transpose().dot(x))/(1+np.exp(w.transpose().dot(x)))
 	y = bernoulli.rvs(logit)
+	print(type(y))
 	# initialize the model
 	m = grad.PyBLRModel()
 	gd = grad.PyBatch_Gradient_Descent(x,y,m)

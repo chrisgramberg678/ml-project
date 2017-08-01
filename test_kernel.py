@@ -107,7 +107,7 @@ class TestKernels(unittest.TestCase):
 
 	@unittest.skip("this one takes about 50 seconds on my laptop")
 	def test_stress(self):
-		"""Let's see what happens when we use big input"""
+		"""test with large input"""
 		x = np.random.rand(2000,2000)
 		y = np.random.rand(2000,2000)
 		self.compare_to_sklearn(x, y)
