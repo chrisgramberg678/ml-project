@@ -120,6 +120,11 @@ VectorXd batch_gradient_descent::fit(VectorXd init, double gamma, string converg
 	int i = 0;
 	// we'll go until we stop from the convergence condition or we hit a billion iterations, whichever is first
 	while( !done(convergence_type, conv, i, step_diff, loss_diff) && i < 1000000000){
+		// uncomment to diagnose infinite looping
+		// if(i % 10 == 0){
+		// 	cout << "i: " << i << endl;
+		// 	cout << "loss: " << loss << endl;
+		// }
 		++i;
 		prev = next;
 		next = prev - gamma*m->gradient(prev, _X, _y);

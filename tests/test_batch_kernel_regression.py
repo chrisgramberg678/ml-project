@@ -20,7 +20,12 @@ class TestBatchKernelRegression(unittest.TestCase):
 	precision = .000001
 	# kernel = grad.PyPolynomialKernel(a,c,d)
 	kernel = grad.PyGaussianKernel(sigma)
-	model = grad.PyKernelBLRModel(kernel,lam)
+	
+	def setUp(self):
+		self.model = grad.PyKernelBLRModel(self.kernel, self.lam)
+
+	def tearDown(self):
+		self.model = None
 
 	def read_test_data_to_list(self, filename):
 		with open(filename) as f:
@@ -45,10 +50,10 @@ class TestBatchKernelRegression(unittest.TestCase):
 
 	def read_data(self, num):
 		# read in test data
-		Xtrain = self.read_test_data_to_list("Xtrain" + num + ".txt")
-		ytrain = (self.read_test_data_to_list("ytrain" + num + ".txt") - 1).flatten()
-		Xtest = self.read_test_data_to_list("Xtest" + num + ".txt")
-		ytest = (self.read_test_data_to_list("ytest" + num + ".txt") - 1).flatten()
+		Xtrain = self.read_test_data_to_list("tests/Xtrain" + num + ".txt")
+		ytrain = (self.read_test_data_to_list("tests/ytrain" + num + ".txt") - 1).flatten()
+		Xtest = self.read_test_data_to_list("tests/Xtest" + num + ".txt")
+		ytest = (self.read_test_data_to_list("tests/ytest" + num + ".txt") - 1).flatten()
 		return Xtrain, ytrain, Xtest, ytest
 
 	def guess(self, w, Xtrain, Xtest):
@@ -69,12 +74,15 @@ class TestBatchKernelRegression(unittest.TestCase):
 		# we should miss less than 1%
 		self.assertTrue(misses < .01 * self.N)
 
+	# ~210 iterations
 	def test_classify_0(self):
 		self.framework("0")		
 
+	# ~240 iterations
 	def test_classify_1(self):
 		self.framework("1")
 
+	# ~200 iterations
 	def test_classify_2(self):
 		self.framework("2")				
 
@@ -82,7 +90,4 @@ suite = unittest.TestLoader().loadTestsFromTestCase(TestBatchKernelRegression)
 unittest.TextTestRunner(verbosity=2).run(suite)
 
 # TODO: 
-# - generate some more test data using Garret's script
-# - move the various parts of this into functions
 # - change 'missed' to calculate precision and accuracy and put it in a function
-# - write unit tests that use said functions
