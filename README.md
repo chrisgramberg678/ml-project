@@ -36,7 +36,7 @@ We'll also need matplotlib for the included test file: `sudo apt install python-
 
 First we'll need cmake: `sudo apt install cmake`
 
-Then, go download the latest version of [Eigen](eigen.tuxfamily.org).
+Then, go download the latest version of [Eigen](https://eigen.tuxfamily.org).
 
 Extract it into your downloads folder and then install using the following commands:
 
