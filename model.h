@@ -37,3 +37,13 @@ class kernel_binary_logistic_regression_model: public model{
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);		
 };
+
+class stochstic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
+	private:
+		VectorXd dictionary;
+	public:
+		stochstic_kernel_logistic_regression_model();
+		stochstic_kernel_logistic_regression_model(kernel* k, double lambda);
+		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
+		double loss(VectorXd w, MatrixXd X, VectorXd y);	
+};

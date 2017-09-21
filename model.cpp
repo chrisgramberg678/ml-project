@@ -101,3 +101,23 @@ double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, Vec
 	loss /= X.cols();
 	return loss;
 }
+
+// **********************************************************************************************
+// Implementation of model for stochastic descent with a logistic regression model with kernels *
+// **********************************************************************************************
+
+stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression_model(){}
+
+stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression_model(kernel* k, double lambda):
+	kernel_binary_logistic_regression_model(k, lambda)
+	{}
+
+VectorXd stochstic_kernel_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
+	VectorXd result;
+	return result;
+}
+
+double stochstic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
+	double result = 0;
+	return result;
+}
