@@ -158,15 +158,23 @@ stochastic_gradient_descent::stochastic_gradient_descent(model* M){m = M;}
 
 // take some data X and labels y and return the value of the next gradient step
 VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma, MatrixXd X, VectorXd y){
-	// compute the gradient based on the given data
-	VectorXd result = prev - gamma * m->gradient(prev, X, y);
-	// calculate the loss and add it to loss_values
-	double loss = m->loss(result, X, y);
-	loss_values.push_back(loss);
-	return result;
+	if(m->parametric()){
+		// compute the gradient based on the given data
+		VectorXd result = prev - gamma * m->gradient(prev, X, y);
+		// calculate the loss and add it to loss_values
+		double loss = m->loss(result, X, y);
+		loss_values.push_back(loss);
+		return result;
+	}
+	else{
+		// this .1 needs to be a parameter somewhere, not sure whether to attach it to the model or the solver.
+		VectorXd result = (1 - .1) * prev - gamma * m->gradient(prev, X, y);
+		return result;
+	}		
 }
 
 vector<double> stochastic_gradient_descent::py_fit(vector<double> prev, double gamma, vector< vector<double> > X, vector<double> y){
 	VectorXd ans = fit(stl_to_eigen(prev), gamma, stl_to_eigen(X), stl_to_eigen(y));
 	return eigen_to_stl(ans);
 }
+

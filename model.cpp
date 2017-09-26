@@ -2,6 +2,10 @@
 
 // need to define the constructor for model in order for it to work with Cython
 model::model(){}
+model::model(bool parametric):
+	_parametric(parametric)
+	{}
+bool model::parametric(){return _parametric;}
 VectorXd model::gradient(VectorXd w, MatrixXd X, VectorXd y){return VectorXd();}
 double model::loss(VectorXd w, MatrixXd X, VectorXd y){return 0;}
 
@@ -9,7 +13,9 @@ double model::loss(VectorXd w, MatrixXd X, VectorXd y){return 0;}
 // Implementation of linear least squares model *
 // **********************************************
 
-linear_least_squares_model::linear_least_squares_model(){}
+linear_least_squares_model::linear_least_squares_model():
+	model(true)
+	{}
 
 VectorXd linear_least_squares_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
 	VectorXd result(w.rows());
@@ -34,7 +40,9 @@ double linear_least_squares_model::loss(VectorXd w, MatrixXd X, VectorXd y){
 // Implementation of logistic regression model *
 // *********************************************
 
-binary_logistic_regression_model::binary_logistic_regression_model(){}
+binary_logistic_regression_model::binary_logistic_regression_model():
+	model(true)
+	{}
 
 // sum(i=1->N){x_i * (Pr(y=1|x_i) - y_1)}
 VectorXd binary_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
@@ -63,6 +71,7 @@ double binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y
 kernel_binary_logistic_regression_model::kernel_binary_logistic_regression_model(){}
 
 kernel_binary_logistic_regression_model::kernel_binary_logistic_regression_model(kernel* k, double lambda):
+	model(false),
 	_lambda(lambda),
 	_k(k),
 	first(true)
@@ -112,12 +121,25 @@ stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression
 	kernel_binary_logistic_regression_model(k, lambda)
 	{}
 
-VectorXd stochstic_kernel_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
-	VectorXd result;
+VectorXd stochstic_kernel_logistic_regression_model::gradient(VectorXd w, VectorXd X, VectorXd y){
+	VectorXd exp_f = exp(f(w, X).array()).matrix();
+	VectorXd result = (exp_f/(1 + exp_f.array()).matrix() - (1 - y(0))) * _k->gram_matrix(_dictionary, X) + _lambda * f(w, X);
 	return result;
 }
 
 double stochstic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
 	double result = 0;
 	return result;
+}
+
+VectorXd stochstic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){
+	VectorXd sum(w.rows());
+	for(int z = 0; z < w.rows(); z++){
+		sum(z) = 0;
+	}
+	MatrixXd kernel_mat = _k->gram_matrix(_dictionary, X);
+	for(int i = 0; i < w.rows(); ++i){
+		sum += w(i) * kernel_mat.col(i);
+	}
+	return sum;
 }
