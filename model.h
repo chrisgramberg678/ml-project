@@ -46,7 +46,7 @@ class kernel_binary_logistic_regression_model: public model{
 class stochstic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
 	private:
 		VectorXd _dictionary;
-		VectorXd f(VectorXd w, VectorXd X);
+		double f(VectorXd w, VectorXd X);
 	public:
 		stochstic_kernel_logistic_regression_model();
 		stochstic_kernel_logistic_regression_model(kernel* k, double lambda);

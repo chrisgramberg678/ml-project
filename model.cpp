@@ -122,8 +122,8 @@ stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression
 	{}
 
 VectorXd stochstic_kernel_logistic_regression_model::gradient(VectorXd w, VectorXd X, VectorXd y){
-	VectorXd exp_f = exp(f(w, X).array()).matrix();
-	VectorXd result = (exp_f/(1 + exp_f.array()).matrix() - (1 - y(0))) * _k->gram_matrix(_dictionary, X) + _lambda * f(w, X);
+	double exp_f = exp(f(w, X));
+	VectorXd result = (exp_f/(1 + exp_f) - (1 - y(0))) * _k->gram_matrix(_dictionary, X) + _lambda * f(w, X);
 	return result;
 }
 
@@ -132,14 +132,19 @@ double stochstic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X, 
 	return result;
 }
 
-VectorXd stochstic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){
-	VectorXd sum(w.rows());
-	for(int z = 0; z < w.rows(); z++){
-		sum(z) = 0;
-	}
-	MatrixXd kernel_mat = _k->gram_matrix(_dictionary, X);
+double stochstic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){
+	// VectorXd sum(w.rows());
+	// for(int z = 0; z < w.rows(); z++){
+	// 	sum(z) = 0;
+	// }
+	// MatrixXd kernel_mat = _k->gram_matrix(_dictionary, X);
+	// for(int i = 0; i < w.rows(); ++i){
+	// 	sum += w(i) * kernel_mat.col(i);
+	// }
+	// return sum;
+	double sum = 0;
 	for(int i = 0; i < w.rows(); ++i){
-		sum += w(i) * kernel_mat.col(i);
+		sum += w(i)*_k->k(_dictionary(i),X(i));
 	}
 	return sum;
 }
