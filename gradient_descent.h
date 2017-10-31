@@ -73,7 +73,6 @@ class batch_gradient_descent : public optomization_solver_base{
   based on the model. It doesn't hold onto any of the data it is passed
  */
 class stochastic_gradient_descent : public optomization_solver_base{
-
 	public:
 		// need a default constructor to appease Cython
 		stochastic_gradient_descent();

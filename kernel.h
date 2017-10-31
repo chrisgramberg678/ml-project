@@ -10,9 +10,8 @@ class kernel{
 	// the base class for kernels only provides the nullary constructor
 	// child classes are expected to provide constructors for initializing their parameters
 	// as well as the implementation for k
-	private:
-		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
 	public:
+		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
 		MatrixXd gram_matrix(MatrixXd X, MatrixXd Y);
 		// for Cython
 		vector< vector<double> > py_gram_matrix(vector< vector<double> > X, vector< vector<double> > Y); 
@@ -21,17 +20,17 @@ class kernel{
 class linear_kernel : public kernel{
 	private:
 		double _c;
-		double k(VectorXd x_i, VectorXd y_j);
 	public:
+		double k(VectorXd x_i, VectorXd y_j);
 		linear_kernel(double c);
 };
 
 class polynomial_kernel : public kernel{
 	private:
 		double _a, _c, _d;
-		double k(VectorXd x_i, VectorXd y_j);
 
 	public:
+		double k(VectorXd x_i, VectorXd y_j);
 		polynomial_kernel(double a, double c, double d);
 };
 
@@ -39,7 +38,7 @@ class gaussian_kernel : public kernel{
 	private:
 		// sigma
 		double _s;
-		double k(VectorXd x_i, VectorXd y_j);
 	public:
+		double k(VectorXd x_i, VectorXd y_j);
 		gaussian_kernel(double s);
 };

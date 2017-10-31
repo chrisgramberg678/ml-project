@@ -7,14 +7,22 @@ import numpy as np
 
 cdef extern from "gradient_descent.h" :
 	# model classes
+	# model base class
 	cdef cppclass model:
 		model() except +
+	# linear least squares model
 	cdef cppclass linear_least_squares_model(model):
 		linear_least_squares_model() except +
+	# binary logistic regression model
 	cdef cppclass binary_logistic_regression_model(model):
 		binary_logistic_regression_model() except +
+	# binary logistic regression with kernels for batch solvers
 	cdef cppclass kernel_binary_logistic_regression_model(model):
-		kernel_binary_logistic_regression_model(kernel*, double)
+		kernel_binary_logistic_regression_model(kernel*, double) except + 
+	# binary logistic regression with kernels for stochastic solvers
+	cdef cppclass stochastic_kernel_logistic_regression_model(model):
+		stochastic_kernel_logistic_regression_model(kernel*, double) except + 
+
 	# optomization solver classes
 	cdef cppclass optomization_solver_base:
 		optomization_solver_base() except +
@@ -27,6 +35,7 @@ cdef extern from "gradient_descent.h" :
 		stochastic_gradient_descent() except +
 		stochastic_gradient_descent(model*) except +
 		vector[double] py_fit(vector[double], double, vector[ vector[double] ], vector[double]) except +
+	# kernel classes
 	cdef cppclass kernel:
 		kernel() except +
 		vector[ vector[double] ] py_gram_matrix(vector[ vector[double] ], vector[ vector[double] ]) except +
@@ -102,6 +111,11 @@ cdef class PyKernelBLRModel(PyModel):
 		if type(self) is PyKernelBLRModel:
 			self.KBLRptr = self.modelptr = new kernel_binary_logistic_regression_model(k.kernelptr, l)
 
+cdef class PyStochasticKLRModel(PyModel):
+	cdef stochastic_kernel_logistic_regression_model* SKLRptr
+	def __cinit__(self, PyKernel k, l):
+		if type(self) is PyStochasticKLRModel:
+			self.SKLRptr = self.modelptr = new stochastic_kernel_logistic_regression_model(k.kernelptr, l)
 
 # the python class that wraps around the C++ classes for optomization solvers
 cdef class PyOptomization_Solver_Base:
@@ -141,7 +155,7 @@ cdef class PyStochastic_Gradient_Descent(PyOptomization_Solver_Base):
 			self.stochasticptr = self.solverptr = new stochastic_gradient_descent(m)
 	def fit(self, prev, double gamma, x, y):
 		cdef vector[double] _prev = list(prev)
-		# we need to check whether this x has 1 data point or many
+		# we need to check whether this call has 1 data point or many
 		cdef vector[double] _y
 		if y.ndim == 1:
 			_y = list(y)

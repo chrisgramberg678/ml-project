@@ -106,8 +106,8 @@ double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, Vec
 		double temp = w.transpose() * kxx_i;
 		loss -= temp * id;
 	}
-	loss += (_lambda/2 * (w.transpose() * _KXX)* w);
 	loss /= X.cols();
+	loss += (_lambda/2 * (w.transpose() * _KXX)* w);
 	return loss;
 }
 
@@ -115,36 +115,59 @@ double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, Vec
 // Implementation of model for stochastic descent with a logistic regression model with kernels *
 // **********************************************************************************************
 
-stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression_model(){}
+stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(){}
 
-stochstic_kernel_logistic_regression_model::stochstic_kernel_logistic_regression_model(kernel* k, double lambda):
-	kernel_binary_logistic_regression_model(k, lambda)
+stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(kernel* k, double lambda):
+	kernel_binary_logistic_regression_model(k, lambda),
+	_dictionary()
 	{}
 
-VectorXd stochstic_kernel_logistic_regression_model::gradient(VectorXd w, VectorXd X, VectorXd y){
-	double exp_f = exp(f(w, X));
-	VectorXd result = (exp_f/(1 + exp_f) - (1 - y(0))) * _k->gram_matrix(_dictionary, X) + _lambda * f(w, X);
-	return result;
+double stochastic_kernel_logistic_regression_model::lambda(){
+	return _lambda;
 }
 
-double stochstic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
-	double result = 0;
-	return result;
-}
-
-double stochstic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){
-	// VectorXd sum(w.rows());
-	// for(int z = 0; z < w.rows(); z++){
-	// 	sum(z) = 0;
-	// }
-	// MatrixXd kernel_mat = _k->gram_matrix(_dictionary, X);
-	// for(int i = 0; i < w.rows(); ++i){
-	// 	sum += w(i) * kernel_mat.col(i);
-	// }
-	// return sum;
-	double sum = 0;
-	for(int i = 0; i < w.rows(); ++i){
-		sum += w(i)*_k->k(_dictionary(i),X(i));
+VectorXd stochastic_kernel_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
+	// determine the batch size
+	double B = X.cols();
+	VectorXd result = VectorXd::Zero(w.size() + 1);
+	double weight = 0;
+	// compute the average gradient for the batch to get the new weight
+	for(int c = 0; c < B; ++c){
+		if(_dictionary.size() == 0){
+			_dictionary = MatrixXd(X.rows(),1);
+		}
+		else{
+			_dictionary.conservativeResize(_dictionary.rows(), _dictionary.cols()+1);
+		}
+		_dictionary.col(_dictionary.cols()-1) = X.col(c);
+		// compute the gradient at X 
+		weight += _lambda * f(w, X);
 	}
-	return sum;
+	weight = weight / B;
+	// decay the weights of w by lambda
+	for(int i = 0; i < w.size(); ++i){
+		result(i) = _lambda * w(i);
+	}
+	// append the new weight
+	result(result.size() - 1) = weight;
+	return result;
+}
+
+double stochastic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y){
+	double loss = 0;
+	// ln(1 + exp(f(x))) - (1-y)*f(x) + lambda/2 * ||f||^2
+	for(int c = 0; c < X.cols(); ++c){
+		double f_x = f(w, X.col(c));
+		loss += log(1 + f_x) - (1 - y(c)) * f_x + _lambda * f_x * f_x;
+	}
+	loss /= X.cols();
+	return loss;
+}
+
+double stochastic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){
+	double result = 0;
+	for(int c = 0; c < _dictionary.cols(); ++c){
+		result += w(c) * _k->k(_dictionary.col(c), X);
+	}
+	return result;
 }

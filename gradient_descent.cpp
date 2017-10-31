@@ -167,8 +167,22 @@ VectorXd stochastic_gradient_descent::fit(VectorXd prev, double gamma, MatrixXd 
 		return result;
 	}
 	else{
-		// this .1 needs to be a parameter somewhere, not sure whether to attach it to the model or the solver.
-		VectorXd result = (1 - .1) * prev - gamma * m->gradient(prev, X, y);
+		// first compute the functional gradient given X and y
+		VectorXd f_gradient = m->gradient(prev, X, y);
+		VectorXd result = VectorXd::Zero(f_gradient.rows());
+		for(int i = 0; i < result.size(); ++i){
+			// since our result has one more weight than prev the last value will just 
+			// be multiplied by -gamma
+			if(i < prev.size()){
+				result(i) = prev(i) - gamma * f_gradient(i);
+			}
+			else{
+				result(i) = - gamma * f_gradient(i);
+			}
+		}
+		// calculate the loss and add it to loss_values
+		double loss = m->loss(result, X, y);
+		loss_values.push_back(loss);
 		return result;
 	}		
 }

@@ -40,16 +40,17 @@ class kernel_binary_logistic_regression_model: public model{
 		kernel_binary_logistic_regression_model();
 		kernel_binary_logistic_regression_model(kernel* k, double lambda);
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
-		double loss(VectorXd w, MatrixXd X, VectorXd y);		
+		double loss(VectorXd w, MatrixXd X, VectorXd y);
 };
 
-class stochstic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
+class stochastic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
 	private:
-		VectorXd _dictionary;
+		MatrixXd _dictionary;
 		double f(VectorXd w, VectorXd X);
 	public:
-		stochstic_kernel_logistic_regression_model();
-		stochstic_kernel_logistic_regression_model(kernel* k, double lambda);
-		VectorXd gradient(VectorXd w, VectorXd X, VectorXd y);
+		stochastic_kernel_logistic_regression_model();
+		stochastic_kernel_logistic_regression_model(kernel* k, double lambda);
+		VectorXd gradient(VectorXd w, MatrixXd X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);	
+		double lambda();
 };
