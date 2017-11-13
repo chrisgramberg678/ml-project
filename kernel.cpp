@@ -12,10 +12,12 @@
  * this function computes the Gram Matrix/Kernel Matrix K(X,Y) where the (i,j) entry of K
  * is k(x_i,y_j) and x_i, y_j are the ith and jth columns of X and Y. 
  */
-MatrixXd kernel::gram_matrix(MatrixXd X, MatrixXd Y){
+MatrixXd kernel::gram_matrix(Map<MatrixXd> &X, Map<MatrixXd> &Y){
 	if(X.rows() != Y.rows()){
 		throw invalid_argument("to compute a Gram Matrix both input matrices must have the same number of rows.");
 	}
+	// cout << "X:\n" << X << endl;
+	// cout << "Y:\n" << Y << endl;
 	int M = X.cols();
 	int N = Y.cols();
 	MatrixXd result = MatrixXd(M,N);
@@ -24,12 +26,8 @@ MatrixXd kernel::gram_matrix(MatrixXd X, MatrixXd Y){
 			result(i,j) = this->k(X.col(i),Y.col(j));
 		}
 	}
+	// cout << "result:\n" << result << endl;
 	return result;
-}
-
-vector< vector<double> > kernel::py_gram_matrix(vector< vector<double> > X, vector< vector<double> > Y){
-	MatrixXd ans = gram_matrix(stl_to_eigen(X), stl_to_eigen(Y));
-	return eigen_to_stl(ans);
 }
 
 /* Implementation for the linear_kernel class */

@@ -1,6 +1,6 @@
 # unit tests for kernels
 import unittest
-import grad
+import ml_project as ml
 import numpy as np
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.metrics.pairwise import polynomial_kernel
@@ -18,95 +18,80 @@ class TestKernels(unittest.TestCase):
 	gs = .5
 	g = 1/(2*gs*gs)
 	# my kernels
-	lk = grad.PyLinearKernel(0)
-	pk = grad.PyPolynomialKernel(pa,pc,pd)
-	gk = grad.PyGaussianKernel(gs)
+	lk = ml.linear_kernel(0)
+	pk = ml.polynomial_kernel(pa,pc,pd)
+	gk = ml.gaussian_kernel(gs)
 
 	def compare_to_sklearn(self, x, y):
 		"""Helper for comparing the three kernels to avoid copy-pasting """
-		sk_lk = linear_kernel(x.transpose(), y.transpose())
+		sk_lk = linear_kernel(x, y)
 		my_lk = self.lk.gram_matrix(x, y)
 		self.assertTrue(np.allclose(my_lk, sk_lk))
 
-		sk_pk = polynomial_kernel(x.transpose(), y.transpose(), self.pd, self.pa, self.pc)
+		sk_pk = polynomial_kernel(x, y, self.pd, self.pa, self.pc)
 		my_pk = self.pk.gram_matrix(x, y)
 		self.assertTrue(np.allclose(my_pk, sk_pk))
 
-		sk_gk = rbf_kernel(x.transpose(), y.transpose(), self.g)
+		sk_gk = rbf_kernel(x, y, self.g)
 		my_gk = self.gk.gram_matrix(x, y)
 		self.assertTrue(np.allclose(my_gk, sk_gk))
 
 	# we're expecting exceptions here so there's no need to compare anything
 	def check_exceptions(self, x, y):
 		message = "to compute a Gram Matrix both input matrices must have the same number of rows."
-		failed = "we should have gotten an exception here"
-		try:
-			my_lk = self.lk.gram_matrix(x, y)
-			self.fail(failed)
-		except Exception as e:
-			self.assertTrue(e.message, message)
+		with self.assertRaises(ValueError):
+			self.lk.gram_matrix(x, y)
+		with self.assertRaises(ValueError):
+			self.pk.gram_matrix(x, y)
+		with self.assertRaises(ValueError):
+			self.gk.gram_matrix(x, y)
 
-		try:
-			my_pk = self.pk.gram_matrix(x, y)
-			self.fail(failed)
-		except Exception as e:
-			self.assertTrue(e.message, message)
-
-		try:
-			my_gk = self.gk.gram_matrix(x, y)
-			self.fail(failed)
-		except Exception as e:
-			self.assertTrue(e.message, message)
-
-	def test_2vectors_good(self):
-		# test data 
-		x = np.array([1,2,3,4])
-		y = np.array([5,6,7,8])
-		x.shape = y.shape = (4,1)
+	def test_2vectors_same_samples(self):
+		x = np.random.rand(3,1)
+		y = np.random.rand(3,1)
 		self.compare_to_sklearn(x, y)
 
-	def test_2vectors_bad(self):
-		# note the mismatch in shapes here
-		x = np.array([1,2,3])
-		y = np.array([1,2])
-		x.shape = (3,1)
-		y.shape = (2,1)
-		self.check_exceptions(x, y)
+	def test_2vectors_diff_samples(self):
+		x = np.random.rand(3,1)
+		y = np.random.rand(4,1)
+		self.compare_to_sklearn(x,y)
 
+	def test_2vectors_diff_features(self):
+		x = np.random.rand(3,1)
+		y = np.random.rand(3,2)
+		self.check_exceptions(x, y)
+	
 	def test_1vector_1matrix_good(self):
-		x = np.array([1,2])
-		x.shape = (2,1)
-		y = np.array([[1,2],[3,4]])
+		x = np.random.rand(1,5)
+		y = np.random.rand(5,5)
 		self.compare_to_sklearn(x, y)
 
 	def test_1vector_1matrix_bad(self):
-		x = np.array([1,2,3])
-		x.shape = (3,1)
-		y = np.array([[1,2],[3,4]])
+		x = np.random.rand(5,1)
+		y = np.random.rand(5,5)
 		self.check_exceptions(x, y)
 
 	def test_2same_samples_matrices_good(self):
-		x = np.array([[1,2,3],[4,5,6]])
-		y = np.array([[7,8,9],[1,2,3]])
+		x = np.random.rand(5,5)
+		y = np.random.rand(5,5)
 		self.compare_to_sklearn(x, y)
 
-	def test_2same_samples_matrices_bad(self):
-		x = np.array([[1,2],[3,4]])
-		y = np.array([[1,2,3],[4,5,6]])
+	def test_2matrices_diff_features_bad(self):
+		x = np.random.rand(2,2)
+		y = np.random.rand(2,3)
 		self.check_exceptions(x, y)
 
 	def test_2diff_samples_matrices_good(self):
-		x = np.array([[1,2],[3,4]])
-		y = np.array([[9,8,7],[6,5,4]])
+		x = np.random.rand(3,3)
+		y = np.random.rand(2,3)
 		self.compare_to_sklearn(x, y)
 
-	def test_2diff_samples_matrices_bad(self):
-		x = np.array([[1,2],[3,4],[5,6]])
-		y = np.array([[1,2,3],[4,5,6]])
+	def test_2diff_samples_and_features_matrices_bad(self):
+		x = np.random.rand(3,3)
+		y = np.random.rand(2,4)
 		self.check_exceptions(x, y)
 
-	def test_stress(self):
-		"""test with large input"""
+	def test_large_input(self):
 		x = np.random.rand(2000,2000)
 		y = np.random.rand(2000,2000)
 		self.compare_to_sklearn(x, y)

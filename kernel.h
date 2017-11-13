@@ -12,9 +12,7 @@ class kernel{
 	// as well as the implementation for k
 	public:
 		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
-		MatrixXd gram_matrix(MatrixXd X, MatrixXd Y);
-		// for Cython
-		vector< vector<double> > py_gram_matrix(vector< vector<double> > X, vector< vector<double> > Y); 
+		MatrixXd gram_matrix(Map<MatrixXd> &X, Map<MatrixXd> &Y);
 };
 
 class linear_kernel : public kernel{
