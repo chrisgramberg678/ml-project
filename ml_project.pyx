@@ -20,10 +20,13 @@ cdef class kernel:
 		thisptr = NULL
 
 	def __dealloc__(self):
-		del self.thisptr
+		pass
 
 	def gram_matrix(self, np.ndarray X, np.ndarray Y):
-		return ndarray_copy(self.thisptr.gram_matrix(Map[MatrixXd](col_major(X)), Map[MatrixXd](col_major(Y))))
+		if self.thisptr is NULL:
+			raise Exception("Cannot call gram_matrix on kernel base class!")
+		else:
+			return ndarray_copy(self.thisptr.gram_matrix(Map[MatrixXd](col_major(X)), Map[MatrixXd](col_major(Y))))
 
 cdef class linear_kernel(kernel):
 	"""linear kernel, impl based on:

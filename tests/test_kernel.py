@@ -96,5 +96,11 @@ class TestKernels(unittest.TestCase):
 		y = np.random.rand(2000,2000)
 		self.compare_to_sklearn(x, y)
 
+	def test_call_kernel_gram_matrix(self):
+		k = ml.kernel()
+		a = np.zeros(1)
+		with self.assertRaises(Exception) as e:
+			k.gram_matrix(a,a)
+
 suite = unittest.TestLoader().loadTestsFromTestCase(TestKernels)
 unittest.TextTestRunner(verbosity=2).run(suite)
