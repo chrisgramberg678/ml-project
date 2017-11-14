@@ -14,6 +14,9 @@ class model{
 		bool parametric();
 		virtual VectorXd gradient(VectorXd w, MatrixXd X, VectorXd y);
 		virtual double loss(VectorXd w, MatrixXd X, VectorXd y);
+		// TODO: have this return a tuple of VectorXds (label, probability)
+		// currently it only returns the label
+		virtual VectorXd predict(Map<VectorXd> weights, Map<MatrixXd> X);
 };
 
 class linear_least_squares_model : public model{
@@ -21,6 +24,7 @@ class linear_least_squares_model : public model{
 		linear_least_squares_model();
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);
+		VectorXd predict(Map<VectorXd> weights, Map<MatrixXd> X);
 };
 
 class binary_logistic_regression_model : public model{
@@ -28,6 +32,7 @@ class binary_logistic_regression_model : public model{
 		binary_logistic_regression_model();
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);
+		VectorXd predict(Map<VectorXd> weights, Map<MatrixXd> X);
 };
 
 class kernel_binary_logistic_regression_model: public model{
@@ -41,6 +46,7 @@ class kernel_binary_logistic_regression_model: public model{
 		kernel_binary_logistic_regression_model(kernel* k, double lambda);
 		VectorXd gradient(VectorXd w, MatrixXd  X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);
+		VectorXd predict(Map<VectorXd> weights, Map<MatrixXd> X);
 };
 
 class stochastic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
@@ -52,5 +58,5 @@ class stochastic_kernel_logistic_regression_model: public kernel_binary_logistic
 		stochastic_kernel_logistic_regression_model(kernel* k, double lambda);
 		VectorXd gradient(VectorXd w, MatrixXd X, VectorXd y);
 		double loss(VectorXd w, MatrixXd X, VectorXd y);	
-		double lambda();
+		VectorXd predict(Map<VectorXd> weights, Map<MatrixXd> X);
 };

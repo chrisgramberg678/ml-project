@@ -1,13 +1,16 @@
 #include "model.h"
 
 // need to define the constructor for model in order for it to work with Cython
-model::model(){}
+model::model():
+	_parametric(0)
+	{}
 model::model(bool parametric):
 	_parametric(parametric)
 	{}
 bool model::parametric(){return _parametric;}
 VectorXd model::gradient(VectorXd w, MatrixXd X, VectorXd y){return VectorXd();}
 double model::loss(VectorXd w, MatrixXd X, VectorXd y){return 0;}
+VectorXd model::predict(Map<VectorXd> weights, Map<MatrixXd> X){return VectorXd::Zero(weights.size());}
 
 // **********************************************
 // Implementation of linear least squares model *
@@ -36,6 +39,14 @@ double linear_least_squares_model::loss(VectorXd w, MatrixXd X, VectorXd y){
 	return loss;
 }
 
+VectorXd linear_least_squares_model::predict(Map<VectorXd> weights, Map<MatrixXd> X){
+	if(weights.size() != X.rows()){
+		throw invalid_argument("weights must have same size as number of rows in X. weights.size(): " + 
+			to_string(weights.size()) + ". X.rows(): " + to_string(X.rows()) + ".");
+	}
+	return weights * X;
+}
+
 // *********************************************
 // Implementation of logistic regression model *
 // *********************************************
@@ -62,6 +73,23 @@ double binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, VectorXd y
 	}
 	loss /=X.cols();
 	return loss;
+}
+
+VectorXd binary_logistic_regression_model::predict(Map<VectorXd> weights, Map<MatrixXd> X){
+	if(weights.size() != X.rows()){
+		throw invalid_argument("weights must have same size as number of rows in X. weights.size(): " + 
+			to_string(weights.size()) + ". X.rows(): " + to_string(X.rows()) + ".");
+	}
+	// P(y_i=1|x_i) = exp(w.transpose() * x_i)/(1 + exp(w.transpose() * x_i)) 
+	int s = X.cols();
+	VectorXd probabilities = VectorXd::Zero(s);
+	VectorXd labels = VectorXd::Zero(s);
+	for(int c = 0; c < s; ++c){
+		double e = exp(weights.transpose() * X.col(c));
+		probabilities(c) = e/(e+1);
+		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
+	}
+	return labels;
 }
 
 // **********************************************************
@@ -111,6 +139,14 @@ double kernel_binary_logistic_regression_model::loss(VectorXd w, MatrixXd X, Vec
 	return loss;
 }
 
+VectorXd kernel_binary_logistic_regression_model::predict(Map<VectorXd> weights, Map<MatrixXd> X){
+	if(weights.size() != X.rows()){
+		throw invalid_argument("weights must have same size as number of rows in X. weights.size(): " + 
+			to_string(weights.size()) + ". X.rows(): " + to_string(X.rows()) + ".");
+	}
+	return weights;
+}
+
 // **********************************************************************************************
 // Implementation of model for stochastic descent with a logistic regression model with kernels *
 // **********************************************************************************************
@@ -121,10 +157,6 @@ stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regressi
 	kernel_binary_logistic_regression_model(k, lambda),
 	_dictionary()
 	{}
-
-double stochastic_kernel_logistic_regression_model::lambda(){
-	return _lambda;
-}
 
 VectorXd stochastic_kernel_logistic_regression_model::gradient(VectorXd w, MatrixXd X, VectorXd y){
 	// determine the batch size
@@ -162,6 +194,10 @@ double stochastic_kernel_logistic_regression_model::loss(VectorXd w, MatrixXd X,
 	}
 	loss /= X.cols();
 	return loss;
+}
+
+VectorXd stochastic_kernel_logistic_regression_model::predict(Map<VectorXd> weights, Map<MatrixXd> X){
+	return VectorXd::Zero(weights.size());
 }
 
 double stochastic_kernel_logistic_regression_model::f(VectorXd w, VectorXd X){

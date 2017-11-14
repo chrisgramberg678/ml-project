@@ -5,7 +5,7 @@ import eigency
 
 extensions = [
     Extension(name="ml_project",
-    		  sources=["ml_project.pyx", "kernel.cpp"],
+    		  sources=["ml_project.pyx", "kernel.cpp", "model.cpp"],
               extra_compile_args=['-std=c++11'],
               include_dirs= eigency.get_includes(include_eigen=False),
               language="c++",

@@ -12,6 +12,7 @@ class kernel{
 	// as well as the implementation for k
 	public:
 		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
+		MatrixXd gram_matrix(const MatrixXd &X, const MatrixXd &Y);
 		MatrixXd gram_matrix(Map<MatrixXd> &X, Map<MatrixXd> &Y);
 };
 

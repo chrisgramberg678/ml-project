@@ -13,6 +13,10 @@
  * is k(x_i,y_j) and x_i, y_j are the ith and jth columns of X and Y. 
  */
 MatrixXd kernel::gram_matrix(Map<MatrixXd> &X, Map<MatrixXd> &Y){
+	return gram_matrix(MatrixXd(X),MatrixXd(Y));
+}
+
+MatrixXd kernel::gram_matrix(const MatrixXd &X, const MatrixXd &Y){
 	if(X.rows() != Y.rows()){
 		throw invalid_argument("to compute a Gram Matrix both input matrices must have the same number of rows.");
 	}
