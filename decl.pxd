@@ -1,6 +1,8 @@
 from eigency.core cimport *
+from libcpp.vector cimport vector
+from libcpp.string cimport string
 
-cdef extern from "model.h":
+cdef extern from "gradient_descent.h":
 	
 	cdef cppclass kernel:
 		kernel() except+
@@ -24,3 +26,15 @@ cdef extern from "model.h":
 		kernel_binary_logistic_regression_model(kernel*, double) except+
 	cdef cppclass stochastic_kernel_logistic_regression_model(model):
 		stochastic_kernel_logistic_regression_model(kernel*, double) except+
+
+	cdef cppclass optomization_solver_base:
+		optomization_solver_base() except+
+		vector[double] get_loss_values() except+
+	cdef cppclass batch_gradient_descent(optomization_solver_base):
+		batch_gradient_descent() except+
+		batch_gradient_descent(Map[MatrixXd], Map[MatrixXd], model*) except+
+		VectorXd fit(Map[VectorXd], double, string, double) except+
+	cdef cppclass stochastic_gradient_descent(optomization_solver_base):
+		stochastic_gradient_descent() except+
+		stochastic_gradient_descent(model*) except+
+		VectorXd fit(Map[VectorXd], double, Map[MatrixXd], Map[MatrixXd]) except+

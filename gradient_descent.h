@@ -12,7 +12,7 @@ using Eigen::ArrayXd;
  */
 class optomization_solver_base{
 	public:
-		vector<double> get_loss();
+		vector<double> get_loss_values();
 	protected:
 		// protected so that no one can create objects of this type
 		optomization_solver_base();
@@ -21,11 +21,6 @@ class optomization_solver_base{
 
 		// all solvers will track the loss value at each step so that we can plot it
 		vector<double> loss_values;
-
-		// helpers for interfacting to Cython
-		vector<double> eigen_to_stl(VectorXd v);
-		VectorXd stl_to_eigen(vector<double> v);
-		MatrixXd stl_to_eigen(vector< vector<double> > v);
 };
 
 
@@ -45,25 +40,18 @@ class batch_gradient_descent : public optomization_solver_base{
 		bool done(string type, double conv, int iteration, VectorXd step_diff, double loss_diff);
 
 	public:
-		// need a default constructor to appease Cython
 		batch_gradient_descent();
 		
-		/* construction using arbitrary size data X and y
-		   dimensionality of X should be dxN where
-		   d is the dimensionality of the problem and N is the number of data points
-		   dimensionality of y is 1xN
+		/** 
+		 * construction using arbitrary size data X and y
+		 * dimensions of X are dxN where
+		 * d is the number of features and N is the number of data points
+		 * dimensions of y are 1xN
 		 */
-		batch_gradient_descent(MatrixXd X, VectorXd y, model* M);
+		batch_gradient_descent(Map<MatrixXd> X, Map<VectorXd> y, model* M);
 		
-		//construction using STL vectors so that we can interface with Cython
-		batch_gradient_descent(vector< vector<double> > X, vector<double> y, model* M);
-
 		// does the actual work of fitting a model to the data
-		VectorXd fit(VectorXd init, double gamma, string convergence_type = "none", double conv = 1000000);
-
-		// a slightly different version of fit so that I don't have to wrap the VexctorXd class for Cython
-		// This works because Cython comes with automatic conversion from STL vectors to Python lists
-		vector<double> py_fit(vector<double> init, double gamma, string convergence_type = "none", double conv = 1000000);
+		VectorXd fit(Map<VectorXd> init, double gamma, string convergence_type = "none", double conv = 1000000);
 };
 
 
@@ -74,14 +62,12 @@ class batch_gradient_descent : public optomization_solver_base{
  */
 class stochastic_gradient_descent : public optomization_solver_base{
 	public:
-		// need a default constructor to appease Cython
 		stochastic_gradient_descent();
 
 		// initialize with just the model
 		stochastic_gradient_descent(model* M);
 		
 		// does a single step using only set of data
-		VectorXd fit(VectorXd prev, double gamma, MatrixXd X, VectorXd y);
-		// wrapper for Cython to call stochastic_fit
-		vector<double> py_fit(vector<double> prev, double gamma, vector< vector<double> > X, vector<double> y);
+		VectorXd fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y);
+		
 };
