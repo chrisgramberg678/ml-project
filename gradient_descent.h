@@ -16,11 +16,12 @@ class optomization_solver_base{
 	protected:
 		// protected so that no one can create objects of this type
 		optomization_solver_base();
+		
 		// all solvers need a model
-		model* m;
+		model* _model;
 
 		// all solvers will track the loss value at each step so that we can plot it
-		vector<double> loss_values;
+		vector<double> _loss_values;
 };
 
 
@@ -41,7 +42,6 @@ class batch_gradient_descent : public optomization_solver_base{
 
 	public:
 		batch_gradient_descent();
-		
 		/** 
 		 * construction using arbitrary size data X and y
 		 * dimensions of X are dxN where
@@ -68,6 +68,7 @@ class stochastic_gradient_descent : public optomization_solver_base{
 		stochastic_gradient_descent(model* M);
 		
 		// does a single step using only set of data
+		// needs to query the gradient and update the model, but the model should not update itself
 		VectorXd fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y);
 		
 };

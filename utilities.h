@@ -7,6 +7,7 @@
 #include <limits>
 #include <string>
 #include <tuple>
+#include <random>
 #include "math.h"
 using Eigen::ArrayXd;
 using Eigen::MatrixXd;
