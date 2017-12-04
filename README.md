@@ -1,6 +1,6 @@
 # ml-project
 
-This library implements batch gradient descent and stochastic gradient descent for both a Linear Least Squares Model and a Binary Logistic Regression Model. The library is written in C++ and Cython is used to compile it to a Python module.
+This library implements batch gradient descent and stochastic gradient descent for both a Linear Least Squares Model, a Binary Logistic Regression Model, and a Binary Logistic Regression Model with Kernels. The library is written in C++ and Cython is used to compile it to a Python module.
 
 ## Installation
 
@@ -67,7 +67,7 @@ Here, `data` is a NxM numpy array with N samples and M features and labels are s
 
 Calling the fit() function on a solver will give the w which fits the model. 
 
-For BGD use:
+__BGD.fit()__
 
 `batch_gradient_descent.fit(inital_values, step_size, convergence_type, convergence_value)`.
 
@@ -81,7 +81,7 @@ These two parameters are optional and their default values are "iterations" and 
 
 Regardless of the convergence type you pass in the fit function will stop after 1,000,000,000 iterations or if the loss value (which is calculated at each step) gets to the value `numeric_limits<double>::infinity()`.
 
-The `fit()` function for stochastic gradient descent works similarly:
+__SGD.fit()__
 
 `stochastic_gradient_descent.fit(prev, step_size, data, labels)`
 
