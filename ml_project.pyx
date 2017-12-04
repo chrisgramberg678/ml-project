@@ -1,4 +1,4 @@
-from eigency.core cimport *
+from eigency.core cimport * 
 from libcpp.vector cimport vector
 from decl cimport kernel as _kernel
 from decl cimport linear_kernel as _linear_kernel
@@ -11,19 +11,19 @@ from decl cimport kernel_binary_logistic_regression_model as _kblr_model
 from decl cimport stochastic_kernel_logistic_regression_model as _sklr_model
 from decl cimport optomization_solver_base as _solver_base
 from decl cimport batch_gradient_descent as _BGD
-from decl cimport stochastic_gradient_descent as SGD
+from decl cimport stochastic_gradient_descent as _SGD
 import numpy as np
 
 def col_major(n):
 	"""convert the array to column-major for Eigen"""
-	# transpose matricies with either one sample or one feature to compensate for switching from row major to column major
-	if n.shape[0] == 1 or n.shape[1] == 1:
-		n = n.transpose()
-	return np.reshape(n,n.shape,order='F')
+	# if the shape of n is (len(n),) then it is treated as having len(n) samples with 1 feature so we'll adjust the shape
+	if len(n.shape) == 1:
+		n.shape = len(n),1
+	return np.array(n.transpose(),order='F')
 
 cdef class kernel:
 	"""Abstract Class that serves as a base for kernels and provides an implementation of gram_matrix()"""
-	cdef _kernel *thisptr;
+	cdef _kernel* thisptr;
 
 	def __cinit__(self):
 		thisptr = NULL
@@ -35,7 +35,9 @@ cdef class kernel:
 		if self.thisptr is NULL:
 			raise Exception("Cannot call gram_matrix() on kernel base class!")
 		else:
-			return ndarray_copy(self.thisptr.gram_matrix(Map[MatrixXd](col_major(X)), Map[MatrixXd](col_major(Y))))
+			_x = col_major(X)
+			_y = col_major(Y)
+			return ndarray_copy(self.thisptr.gram_matrix(Map[MatrixXd](_x), Map[MatrixXd](_y)))
 
 cdef class linear_kernel(kernel):
 	"""linear kernel, impl based on:
@@ -72,7 +74,7 @@ cdef class gaussian_kernel(kernel):
 
 cdef class model:
 	"""Abstract Base class for models"""
-	cdef _model *thisptr
+	cdef _model* thisptr
 
 	def __cinit__(self):
 		thisptr = NULL
@@ -80,14 +82,15 @@ cdef class model:
 	def __dealloc__(self):
 		pass
 
-	def predict(self, np.ndarray weights, np.ndarray X):
+	def predict(self, np.ndarray X):
 		if self.thisptr is NULL:
 			raise Exception("Cannot call predict() on model base class!")
 		else:
-			return ndarray_copy(self.thisptr.predict(Map[VectorXd](col_major(weights)), Map[MatrixXd](col_major(X))))
+			_x = col_major(X)
+			return ndarray_copy(self.thisptr.predict(Map[MatrixXd](_x)))
 
 cdef class lls_model(model):
-
+	'''Linear Least Squares Model'''
 	def __cinit__(self):
 		self.thisptr = new _lls_model()
 
@@ -95,7 +98,7 @@ cdef class lls_model(model):
 		del self.thisptr
 
 cdef class blr_model(model):
-
+	'''Binary Logistic Regression Model'''
 	def __cinit__(self):
 		self.thisptr = new _blr_model()
 
@@ -103,7 +106,7 @@ cdef class blr_model(model):
 		del self.thisptr
 
 cdef class kblr_model(model):
-
+	'''Kernel Binary Logistic Regression Model'''
 	def __cinit__(self, kernel k, double l):
 		self.thisptr = new _kblr_model(k.thisptr, l)
 
@@ -111,7 +114,7 @@ cdef class kblr_model(model):
 		del self.thisptr
 
 cdef class sklr_model(model):
-
+	'''Stochastic Kernel Binary Logistic Regression Model'''
 	def __cinit__(self, kernel k, double l):
 		self.thisptr = new _sklr_model(k.thisptr, l)
 
@@ -120,10 +123,10 @@ cdef class sklr_model(model):
 
 cdef class solver:
 	"""Abstract base class for solvers"""
-	cdef _solver_base *thisptr
+	cdef _solver_base* thisptr
 
 	def __cinit__(self):
-		self.thisptr = NULL
+		thisptr = NULL
 
 	def __dealloc__(self):
 		pass
@@ -135,14 +138,37 @@ cdef class solver:
 			return np.array(list(self.thisptr.get_loss_values()))
 
 cdef class BGD(solver):
-	cdef _BGD *bgdptr
+	'''Batch Gradient Descent Solver'''
+	cdef _BGD* bgdptr
 
 	def __cinit__(self, np.ndarray x, np.ndarray y, model m not None):
-		print(m)
-		self.thisptr = bgdptr = new _BGD(Map[MatrixXd](col_major(x)), Map[VectorXd](col_major(y)), m.thisptr)
+		cdef _model* mod = m.thisptr
+		_x = col_major(x)
+		_y = col_major(y)
+		self.thisptr = self.bgdptr = new _BGD(Map[MatrixXd](_x), Map[VectorXd](_y), mod)
+
+	def __dealloc__(self):
+		del self.thisptr
+		
+	def fit(self, np.ndarray init, double step_size, str conv_type, double conv_val):
+		_init = col_major(init)
+		return ndarray_copy(self.bgdptr.fit(Map[VectorXd](_init), step_size, conv_type, conv_val))
+
+cdef class SGD(solver):
+	'''Stochastic Gradient Descent Solver'''
+	cdef _SGD* sgdptr
+
+	def __cinit__(self, model m not None):
+		cdef _model* mod = m.thisptr
+		self.thisptr = self.sgdptr = new _SGD(mod)
 
 	def __dealloc__(self):
 		del self.thisptr
 
-	def fit(self, np.ndarray init, double step_size, str conv_type, double conv_val):
-		return ndarray_copy(self.bgdptr.fit(Map[VectorXd](col_major(init)), step_size, conv_type, conv_val))
+	def fit(self, np.ndarray init, double step_size, np.ndarray data, np.ndarray labels):
+		print("sup")
+		_init = col_major(init)
+		_data = col_major(data)
+		_labels = col_major(labels)
+		print("hmm")
+		return ndarray_copy(self.sgdptr.fit(Map[VectorXd](_init), step_size, Map[MatrixXd](_data), Map[VectorXd](_labels)))

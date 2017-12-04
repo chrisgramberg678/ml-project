@@ -58,8 +58,6 @@ VectorXd linear_least_squares_model::predict(Map<MatrixXd> X){
 		throw invalid_argument("weights must have same size as number of rows in X. weights.size(): " + 
 			to_string(_weights.size()) + ". X.rows(): " + to_string(X.rows()) + ".");
 	}
-	// cout << "weights:\n" << weights << endl;
-	// cout << "X:\n" << X << endl;
 	return _weights.transpose() * X;
 }
 
@@ -123,13 +121,11 @@ kernel_binary_logistic_regression_model::kernel_binary_logistic_regression_model
 
 VectorXd kernel_binary_logistic_regression_model::gradient(MatrixXd X, VectorXd y){
 	if(first){
+		_X_train = X;
 		_KXX = _k->gram_matrix(X, X);
 		first = false;
 	}
-	VectorXd result(_weights.rows());
-	for(int j = 0; j < _weights.rows(); ++j){
-		result(j) = 0;
-	}
+	VectorXd result = VectorXd::Zero(_weights.rows());
 	for(int i = 0; i < X.cols(); ++i){
 		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
 		double e = exp(_weights.transpose() * (kxx_i));
@@ -141,6 +137,11 @@ VectorXd kernel_binary_logistic_regression_model::gradient(MatrixXd X, VectorXd 
 }
 
 double kernel_binary_logistic_regression_model::loss(MatrixXd X, VectorXd y){
+	if(first){
+		_X_train = X;
+		_KXX = _k->gram_matrix(X, X);
+		first = false;
+	}
 	double loss = 0;
 	for(int i = 0; i < X.cols(); ++i){
 		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
@@ -156,11 +157,17 @@ double kernel_binary_logistic_regression_model::loss(MatrixXd X, VectorXd y){
 }
 
 VectorXd kernel_binary_logistic_regression_model::predict(Map<MatrixXd> X){
-	if(_weights.size() != X.rows()){
-		throw invalid_argument("weights must have same size as number of rows in X. weights.size(): " + 
-			to_string(_weights.size()) + ". X.rows(): " + to_string(X.rows()) + ".");
+	// P(y_i=1|x_i) = exp(w.transpose() * kxx_i)/(1 + exp(w.transpose() * kxx_i))
+	int s = X.cols();
+	VectorXd probabilities = VectorXd::Zero(s);
+	VectorXd labels = VectorXd::Zero(s);
+	for(int c = 0; c < s; ++c){
+		VectorXd kxx_i = _k->gram_matrix(_X_train, X.col(c));
+		double e = exp(_weights.transpose() * (kxx_i));
+		probabilities(c) = e/(e+1);
+		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
 	}
-	return _weights;
+	return labels;
 }
 
 // **********************************************************************************************
@@ -175,29 +182,29 @@ stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regressi
 	{}
 
 VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, VectorXd y){
-	// determine the batch size
-	double B = X.cols();
-	VectorXd result = VectorXd::Zero(_weights.size() + 1);
-	double weight = 0;
-	// compute the average gradient for the batch to get the new weight
-	for(int c = 0; c < B; ++c){
+	// determine the batch size, for each sample in the batch we'll add a new weight
+	int B = X.cols();
+	VectorXd result = VectorXd::Zero(_weights.size() + B);
+	// decay the old weights by lambda, before adding new weights
+	for(int i = 0; i < _weights.size(); ++i){
+		result(i) = _lambda * _weights(i);
+	}
+	// add the new weights to the result
+	for(int b = 0; b < B; ++b){
+		// compute the gradient for the sample to get the new weight
+		double weight = 0;
 		if(_dictionary.size() == 0){
 			_dictionary = MatrixXd(X.rows(),1);
 		}
 		else{
 			_dictionary.conservativeResize(_dictionary.rows(), _dictionary.cols()+1);
 		}
-		_dictionary.col(_dictionary.cols()-1) = X.col(c);
+		_dictionary.col(_dictionary.cols()-1) = X.col(b);
 		// compute the gradient at X 
 		weight += _lambda * f(X);
+		// append the new weight
+		result(result.size() + b) = weight;
 	}
-	weight = weight / B;
-	// decay the weights by lambda
-	for(int i = 0; i < _weights.size(); ++i){
-		result(i) = _lambda * _weights(i);
-	}
-	// append the new weight
-	result(result.size() - 1) = weight;
 	return result;
 }
 

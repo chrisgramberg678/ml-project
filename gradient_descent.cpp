@@ -78,6 +78,7 @@ VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double gamma, string co
 		// if(i % 100 == 0){
 		// 	cout << "i: " << i << endl;
 		// 	cout << "loss: " << loss << endl;
+		// 	// cout << "next: \n" << next << endl;
 		// }
 		++i;
 		prev = next;
@@ -102,16 +103,23 @@ VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double gamma, string co
 
 stochastic_gradient_descent::stochastic_gradient_descent(){}
 
-stochastic_gradient_descent::stochastic_gradient_descent(model* M){_model = M;}
+stochastic_gradient_descent::stochastic_gradient_descent(model* M){_model = M;
+cout << "who dis?\n";
+cout << _model<< endl;}
 
 // take some data X and labels y and return the value of the next gradient step
 VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y){
+	cout << "top\n";
 	if(_model->parametric()){
+		cout << "good\n";
 		// compute the gradient based on the given data
 		VectorXd result = prev - gamma * _model->gradient(X, y);
+		cout << "gradient\n";
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
+		cout << "loss\n";
 		_loss_values.push_back(loss);
+		cout << "push_back\n";
 		return result;
 	}
 	else{
@@ -119,8 +127,7 @@ VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<
 		VectorXd f_gradient = _model->gradient(X, y);
 		VectorXd result = VectorXd::Zero(f_gradient.rows());
 		for(int i = 0; i < result.size(); ++i){
-			// since our result has one more weight than prev the last value will just 
-			// be multiplied by -gamma
+			// since our result has X.cols() more weights than prev the new weights are only multiplied by -gamma
 			if(i < prev.size()){
 				result(i) = prev(i) - gamma * f_gradient(i);
 			}
@@ -128,6 +135,8 @@ VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<
 				result(i) = - gamma * f_gradient(i);
 			}
 		}
+		// update the weights on the model
+		_model->_weights = result;
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
 		_loss_values.push_back(loss);

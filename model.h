@@ -47,6 +47,8 @@ class kernel_binary_logistic_regression_model: public model{
 		kernel* _k;
 		MatrixXd _KXX;
 		bool first;
+		// the training set is needed to make predictions in this model
+		MatrixXd _X_train;
 	public:
 		kernel_binary_logistic_regression_model();
 		kernel_binary_logistic_regression_model(kernel* k, double lambda);

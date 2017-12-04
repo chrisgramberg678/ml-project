@@ -6,7 +6,7 @@ cdef extern from "gradient_descent.h":
 	
 	cdef cppclass kernel:
 		kernel() except+
-		MatrixXd gram_matrix(Map[MatrixXd], Map[MatrixXd]) except+
+		MatrixXd gram_matrix(Map[MatrixXd] &, Map[MatrixXd] &) except+
 	cdef cppclass linear_kernel(kernel):
 		linear_kernel(double) except+
 	cdef cppclass polynomial_kernel(kernel):
@@ -36,4 +36,4 @@ cdef extern from "gradient_descent.h":
 	cdef cppclass stochastic_gradient_descent(optomization_solver_base):
 		stochastic_gradient_descent() except+
 		stochastic_gradient_descent(model*) except+
-		VectorXd fit(Map[VectorXd], double, Map[MatrixXd], Map[MatrixXd]) except+
+		VectorXd fit(Map[VectorXd], double, Map[MatrixXd], Map[VectorXd]) except+

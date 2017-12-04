@@ -8,7 +8,8 @@ def read_test_data_to_list(filename):
 			if line:
 				line = [float(i) for i in line]
 				list.append(line)
-	return np.array(list)
+	# transpose b/c the matlab script used to generate these files is column-major and we want row-major
+	return np.array(list).transpose()
 
 def read_data(num):
 	# read in test data

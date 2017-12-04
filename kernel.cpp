@@ -30,7 +30,6 @@ MatrixXd kernel::gram_matrix(const MatrixXd &X, const MatrixXd &Y){
 			result(i,j) = this->k(X.col(i),Y.col(j));
 		}
 	}
-	// cout << "result:\n" << result << endl;
 	return result;
 }
 
