@@ -103,23 +103,17 @@ VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double gamma, string co
 
 stochastic_gradient_descent::stochastic_gradient_descent(){}
 
-stochastic_gradient_descent::stochastic_gradient_descent(model* M){_model = M;
-cout << "who dis?\n";
-cout << _model<< endl;}
+stochastic_gradient_descent::stochastic_gradient_descent(model* M){_model = M;}
 
-// take some data X and labels y and return the value of the next gradient step
+// take some data X and labels y and return the weights after the next gradient step
 VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y){
-	cout << "top\n";
+	_model->init_weights(prev);
 	if(_model->parametric()){
-		cout << "good\n";
 		// compute the gradient based on the given data
 		VectorXd result = prev - gamma * _model->gradient(X, y);
-		cout << "gradient\n";
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
-		cout << "loss\n";
 		_loss_values.push_back(loss);
-		cout << "push_back\n";
 		return result;
 	}
 	else{

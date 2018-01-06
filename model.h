@@ -18,7 +18,7 @@ class model{
 		void init_weights(VectorXd init);
 		virtual VectorXd gradient(MatrixXd X, VectorXd y);
 		virtual double loss(MatrixXd X, VectorXd y);
-		// TODO: have this return a tuple of VectorXds (label, probability)
+		// TODO: consider having this return a tuple of VectorXds (label, probability)
 		// currently it only returns the label
 		virtual VectorXd predict(Map<MatrixXd> X);
 		friend class batch_gradient_descent;
@@ -61,7 +61,6 @@ class stochastic_kernel_logistic_regression_model: public kernel_binary_logistic
 	private:
 		MatrixXd _dictionary;
 		double f(VectorXd X);
-		// add weights
 	public:
 		stochastic_kernel_logistic_regression_model();
 		stochastic_kernel_logistic_regression_model(kernel* k, double lambda);

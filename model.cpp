@@ -182,28 +182,31 @@ stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regressi
 	{}
 
 VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, VectorXd y){
-	// determine the batch size, for each sample in the batch we'll add a new weight
 	int B = X.cols();
+	// determine the batch size, for each sample in the batch we'll add a new weight
 	VectorXd result = VectorXd::Zero(_weights.size() + B);
 	// decay the old weights by lambda, before adding new weights
 	for(int i = 0; i < _weights.size(); ++i){
 		result(i) = _lambda * _weights(i);
 	}
+	// make room in the dictionary for the new samples
+	if(_dictionary.size() == 0){
+		_dictionary = MatrixXd(X.rows(),B);
+	}
+	else{
+		Eigen::NoChange_t same;
+		_dictionary.conservativeResize(same, _dictionary.cols()+B);
+	}
 	// add the new weights to the result
 	for(int b = 0; b < B; ++b){
-		// compute the gradient for the sample to get the new weight
-		double weight = 0;
-		if(_dictionary.size() == 0){
-			_dictionary = MatrixXd(X.rows(),1);
-		}
-		else{
-			_dictionary.conservativeResize(_dictionary.rows(), _dictionary.cols()+1);
-		}
 		_dictionary.col(_dictionary.cols()-1) = X.col(b);
-		// compute the gradient at X 
-		weight += _lambda * f(X);
-		// append the new weight
-		result(result.size() + b) = weight;
+		// compute the new weight
+		// w_m+1 = eta * (P(y=0|x) - (1-y))
+		// note that the eta refers to the gradient step size and will be handled by the solver
+		double exp_fx = exp(f(X.col(b)));
+		double weight = (exp_fx/(1+exp_fx)) - (1 - y(b));
+		// append the new weight to the result
+		result(_weights.size() + b) = weight;
 	}
 	return result;
 }
@@ -213,14 +216,26 @@ double stochastic_kernel_logistic_regression_model::loss(MatrixXd X, VectorXd y)
 	// ln(1 + exp(f(x))) - (1-y)*f(x) + lambda/2 * ||f||^2
 	for(int c = 0; c < X.cols(); ++c){
 		double f_x = f(X.col(c));
-		loss += log(1 + f_x) - (1 - y(c)) * f_x + _lambda * f_x * f_x;
+		loss += log(1 + exp(f_x)) - ((1 - y(c)) * f_x) + (.5*_lambda * f_x * f_x);
 	}
 	loss /= X.cols();
 	return loss;
 }
 
 VectorXd stochastic_kernel_logistic_regression_model::predict(Map<MatrixXd> X){
-	return VectorXd::Zero(_weights.size());
+	// P(y_i=z|x_i) = [exp(f(x_i))^(1-z)]/[1+exp(f(x_i))]
+	// P(y_i=1|x_i) = 1/(1 + exp(f(x)))
+	int s = X.cols();
+	VectorXd probabilities = VectorXd::Zero(s);
+	VectorXd labels = VectorXd::Zero(s);
+	for(int c = 0; c < s; ++c){
+		double e = exp(f(X.col(c)));
+		probabilities(c) = 1/(e+1);
+		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
+	}
+	// cout << "probabilities:" << probabilities << endl;
+	// cout << "labels:" << labels << endl;
+	return labels;
 }
 
 double stochastic_kernel_logistic_regression_model::f(VectorXd X){

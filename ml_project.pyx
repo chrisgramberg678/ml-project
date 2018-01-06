@@ -165,10 +165,9 @@ cdef class SGD(solver):
 	def __dealloc__(self):
 		del self.thisptr
 
-	def fit(self, np.ndarray init, double step_size, np.ndarray data, np.ndarray labels):
-		print("sup")
-		_init = col_major(init)
+	def fit(self, np.ndarray prev, double step_size, np.ndarray data, np.ndarray labels):
+		_prev = col_major(prev)
 		_data = col_major(data)
 		_labels = col_major(labels)
-		print("hmm")
-		return ndarray_copy(self.sgdptr.fit(Map[VectorXd](_init), step_size, Map[MatrixXd](_data), Map[VectorXd](_labels)))
+		# print("cython stuff")
+		return ndarray_copy(self.sgdptr.fit(Map[VectorXd](_prev), step_size, Map[MatrixXd](_data), Map[VectorXd](_labels)))
