@@ -76,7 +76,7 @@ class TestStochasticGradientDescent(unittest.TestCase):
 
 	def test_stochastic_kblr(self):
 		self.weights = 2 
-		self.epochs = 100
+		self.epochs = 10
 		for i in range(1):
 			k = ml.gaussian_kernel(.3)
 			m = ml.sklr_model(k, .9)
