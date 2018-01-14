@@ -43,11 +43,11 @@ batch_gradient_descent::batch_gradient_descent(Map<MatrixXd> X, Map<VectorXd> y,
 	{_model = m;}	
 /* does the actual fitting using gradient descent
  * params: init - the starting point for the optomization
- * 		   gamma - the step size
+ * 		   step_size - the step size
  *         convergence_type - either "iterations", "loss_precision", "step_precision", or "none"
  *         conv - either the max iterations or the precision provided by the caller
  */
-VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double gamma, string convergence_type, double conv){
+VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double step_size, string convergence_type, double conv){
 	// if(init.rows() != _X.rows()){
 	// 	throw invalid_argument("initial values must have the same size as the number of coefficients");
 	// }
@@ -82,7 +82,7 @@ VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double gamma, string co
 		// }
 		++i;
 		prev = next;
-		next = prev - gamma*_model->gradient(_X, _y);
+		next = prev - step_size*_model->gradient(_X, _y);
 		_model->_weights = next;
 		// _model->update_weights(next);
 		loss = _model->loss(_X, _y);
@@ -106,11 +106,11 @@ stochastic_gradient_descent::stochastic_gradient_descent(){}
 stochastic_gradient_descent::stochastic_gradient_descent(model* M){_model = M;}
 
 // take some data X and labels y and return the weights after the next gradient step
-VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y){
-	_model->init_weights(prev);
+VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double step_size, Map<MatrixXd> X, Map<VectorXd> y){
 	if(_model->parametric()){
+		_model->init_weights(prev);
 		// compute the gradient based on the given data
-		VectorXd result = prev - gamma * _model->gradient(X, y);
+		VectorXd result = prev - step_size * _model->gradient(X, y);
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
 		_loss_values.push_back(loss);
@@ -121,12 +121,12 @@ VectorXd stochastic_gradient_descent::fit(Map<VectorXd> prev, double gamma, Map<
 		VectorXd f_gradient = _model->gradient(X, y);
 		VectorXd result = VectorXd::Zero(f_gradient.rows());
 		for(int i = 0; i < result.size(); ++i){
-			// since our result has X.cols() more weights than prev the new weights are only multiplied by -gamma
+			// since our result has X.cols() more weights than prev the new weights are only multiplied by -step_size
 			if(i < prev.size()){
-				result(i) = prev(i) - gamma * f_gradient(i);
+				result(i) = prev(i) - step_size * f_gradient(i);
 			}
 			else{
-				result(i) = - gamma * f_gradient(i);
+				result(i) = - step_size * f_gradient(i);
 			}
 		}
 		// update the weights on the model

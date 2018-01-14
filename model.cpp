@@ -189,6 +189,18 @@ VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, Vecto
 	for(int i = 0; i < _weights.size(); ++i){
 		result(i) = _lambda * _weights(i);
 	}
+	
+	// add the new weights to the result
+	for(int b = 0; b < B; ++b){
+		// compute the new weight
+		// w_m+1 = eta * (P(y=0|x) - (1-y))
+		// note that the eta refers to the gradient step size and will be handled by the solver
+		double exp_fx = exp(f(X.col(b)));
+		double weight = (exp_fx/(1+exp_fx)) - (1 - y(b));
+		// append the new weight to the result
+		result(_weights.size() + b) = weight/B;
+	}
+
 	// make room in the dictionary for the new samples
 	if(_dictionary.size() == 0){
 		_dictionary = MatrixXd(X.rows(),B);
@@ -197,17 +209,13 @@ VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, Vecto
 		Eigen::NoChange_t same;
 		_dictionary.conservativeResize(same, _dictionary.cols()+B);
 	}
-	// add the new weights to the result
+	// update the dictionary after computing the new weights
+	// and update the kernel matrix used for the loss 
 	for(int b = 0; b < B; ++b){
-		_dictionary.col(_dictionary.cols()-1) = X.col(b);
-		// compute the new weight
-		// w_m+1 = eta * (P(y=0|x) - (1-y))
-		// note that the eta refers to the gradient step size and will be handled by the solver
-		double exp_fx = exp(f(X.col(b)));
-		double weight = (exp_fx/(1+exp_fx)) - (1 - y(b));
-		// append the new weight to the result
-		result(_weights.size() + b) = weight;
+		_dictionary.col(_dictionary.cols() - 1 + b) = X.col(b);
 	}
+	// cout << "Input(X):\n" << X << endl;
+	// cout << "dictionary:\n" << _dictionary << endl;
 	return result;
 }
 
@@ -216,9 +224,10 @@ double stochastic_kernel_logistic_regression_model::loss(MatrixXd X, VectorXd y)
 	// ln(1 + exp(f(x))) - (1-y)*f(x) + lambda/2 * ||f||^2
 	for(int c = 0; c < X.cols(); ++c){
 		double f_x = f(X.col(c));
-		loss += log(1 + exp(f_x)) - ((1 - y(c)) * f_x) + (.5*_lambda * f_x * f_x);
+		loss += log(1 + exp(f_x)) - ((1 - y(c)) * f_x);
 	}
 	loss /= X.cols();
+	// loss += w_t K_dd w
 	return loss;
 }
 
@@ -238,10 +247,10 @@ VectorXd stochastic_kernel_logistic_regression_model::predict(Map<MatrixXd> X){
 	return labels;
 }
 
-double stochastic_kernel_logistic_regression_model::f(VectorXd X){
+double stochastic_kernel_logistic_regression_model::f(VectorXd x){
 	double result = 0;
 	for(int c = 0; c < _dictionary.cols(); ++c){
-		result += _weights(c) * _k->k(_dictionary.col(c), X);
+		result += _weights(c) * _k->k(_dictionary.col(c), x);
 	}
 	return result;
 }
