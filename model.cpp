@@ -178,10 +178,12 @@ stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regressi
 
 stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(kernel* k, double lambda):
 	kernel_binary_logistic_regression_model(k, lambda),
-	_dictionary()
+	_dictionary(),
+	_KDD()
 	{}
 
 VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, VectorXd y){
+	// the batch size
 	int B = X.cols();
 	// determine the batch size, for each sample in the batch we'll add a new weight
 	VectorXd result = VectorXd::Zero(_weights.size() + B);
@@ -189,7 +191,6 @@ VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, Vecto
 	for(int i = 0; i < _weights.size(); ++i){
 		result(i) = _lambda * _weights(i);
 	}
-	
 	// add the new weights to the result
 	for(int b = 0; b < B; ++b){
 		// compute the new weight
@@ -200,34 +201,59 @@ VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, Vecto
 		// append the new weight to the result
 		result(_weights.size() + b) = weight/B;
 	}
-
-	// make room in the dictionary for the new samples
-	if(_dictionary.size() == 0){
-		_dictionary = MatrixXd(X.rows(),B);
-	}
-	else{
-		Eigen::NoChange_t same;
-		_dictionary.conservativeResize(same, _dictionary.cols()+B);
-	}
-	// update the dictionary after computing the new weights
-	// and update the kernel matrix used for the loss 
-	for(int b = 0; b < B; ++b){
-		_dictionary.col(_dictionary.cols() - 1 + b) = X.col(b);
-	}
-	// cout << "Input(X):\n" << X << endl;
-	// cout << "dictionary:\n" << _dictionary << endl;
+	update_dictionary(X);
 	return result;
 }
 
+void stochastic_kernel_logistic_regression_model::update_dictionary(MatrixXd X){
+	// the batch size
+	int B = X.cols();
+	int old_size = _dictionary.cols();
+	// make room in the dictionary for the new samples
+	if(_dictionary.cols() == 0){
+		_dictionary = MatrixXd(X.rows(),B);
+	}
+	else{
+		_dictionary.conservativeResize(_dictionary.rows(), _dictionary.cols()+B);
+	}
+	// update the dictionary after computing the new weights
+	for(int b = 0; b < B; ++b){
+		_dictionary.col(old_size + b) = X.col(b);
+	}
+}
+void stochastic_kernel_logistic_regression_model::update_KDD(){
+	if(_KDD.size() == 0){
+		_KDD = _k->gram_matrix(_dictionary,_dictionary);
+	}
+	// instead of recalculating the entire matrix just copy the old parts and compute the new
+	else{
+		int diff = _dictionary.cols() - _KDD.cols();
+		_KDD.conservativeResize(_KDD.rows() + diff, _KDD.cols() + diff);
+		for(int i = diff; i < _dictionary.cols(); ++i){
+			for(int j = 0; j < i; ++j){
+				double temp = _k->k(_dictionary.col(j), _dictionary.col(i));
+				_KDD(i,j) = temp;
+				_KDD(j,i) = temp;
+			}
+			_KDD(i,i) = 1;
+		}
+	}
+}
+
+
 double stochastic_kernel_logistic_regression_model::loss(MatrixXd X, VectorXd y){
-	double loss = 0;
 	// ln(1 + exp(f(x))) - (1-y)*f(x) + lambda/2 * ||f||^2
+	double loss = 0;
 	for(int c = 0; c < X.cols(); ++c){
 		double f_x = f(X.col(c));
 		loss += log(1 + exp(f_x)) - ((1 - y(c)) * f_x);
 	}
 	loss /= X.cols();
-	// loss += w_t K_dd w
+	if(_weights.size() > 0){
+		// update the regularization factor
+		update_KDD();
+		loss += _lambda/2 * (_weights.transpose() * _KDD) * _weights;
+	}		
 	return loss;
 }
 

@@ -60,7 +60,11 @@ class kernel_binary_logistic_regression_model: public model{
 class stochastic_kernel_logistic_regression_model: public kernel_binary_logistic_regression_model{
 	private:
 		MatrixXd _dictionary;
+		MatrixXd _KDD;
 		double f(VectorXd X);
+		void update_dictionary(MatrixXd X);
+		void update_KDD();
+		
 	public:
 		stochastic_kernel_logistic_regression_model();
 		stochastic_kernel_logistic_regression_model(kernel* k, double lambda);

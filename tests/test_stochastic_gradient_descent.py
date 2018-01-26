@@ -36,7 +36,6 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			# print("epoch: {}. loss: {}".format(e, np.mean(solver.get_loss_values())))
 		return solver.get_loss_values()
 
-	# @unittest.skip("skip")
 	def test_lls(self):
 		self.weights = 2
 		self.N = 480
@@ -50,7 +49,6 @@ class TestStochasticGradientDescent(unittest.TestCase):
 		predictions = m.predict(xs[self.N:])
 		self.assertTrue(np.allclose(predictions, ys[self.N:], atol=.2))
 
-	# @unittest.skip("skip")
 	def test_blr(self):
 		self.weights = 2
 		self.epochs = 2000
@@ -67,17 +65,16 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			error = "Data set: {}. Missed: {}/{}".format(i,missed,validation_labels[:int(self.N)].size)
 			self.assertTrue(missed < .15*validation_labels.size, error)
 
-	# @unittest.skip("skip")
 	def test_stochastic_kblr(self):
 		self.weights = 1
-		self.epochs = 100
-		self.N = 200
-		self.step_size = 0.1
-		for i in range(1):
+		self.epochs = 20
+		self.N = 400
+		self.step_size = 0.3
+		for i in range(3):
 			k = ml.gaussian_kernel(.1)
 			m = ml.sklr_model(k, 0)
 			train_data, train_labels, validation_data, validation_labels = test_util.read_data(str(i))
-			losses = self.train(1, m, (train_data[:self.N], train_labels[:self.N]))
+			losses = self.train(20, m, (train_data[:self.N], train_labels[:self.N]))
 			predictions = m.predict(validation_data).flatten()
 			correct = predictions == validation_labels
 			missed = 0
@@ -85,7 +82,8 @@ class TestStochasticGradientDescent(unittest.TestCase):
 				if not c:
 					missed+=1
 			error = "Data set: {}. Missed: {}/{}".format(i,missed,validation_labels[:int(self.N)].size)
-			self.assertTrue(missed < .1*validation_labels.size, error)
+			# print(error)
+			self.assertTrue(missed < .15*validation_labels.size, error)
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestStochasticGradientDescent)
