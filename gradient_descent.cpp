@@ -78,7 +78,7 @@ VectorXd batch_gradient_descent::fit(Map<VectorXd> init, double step_size, strin
 		// if(i % 100 == 0){
 		// 	cout << "i: " << i << endl;
 		// 	cout << "loss: " << loss << endl;
-		// 	// cout << "next: \n" << next << endl;
+		// 	cout << "next: \n" << next << endl;
 		// }
 		++i;
 		prev = next;

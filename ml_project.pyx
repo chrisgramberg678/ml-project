@@ -19,7 +19,9 @@ def col_major(n):
 	# if the shape of n is (len(n),) then it is treated as having len(n) samples with 1 feature so we'll adjust the shape
 	if len(n.shape) == 1:
 		n.shape = len(n),1
+		return np.array(n,order='F')
 	return np.array(n.transpose(),order='F')
+	 
 
 cdef class kernel:
 	"""Abstract Class that serves as a base for kernels and provides an implementation of gram_matrix()"""
