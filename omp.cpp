@@ -10,6 +10,7 @@
 #include <map>
 #include <random>
 #include <vector>
+#include <stdexcept>
 #include "kernel.h"
 using Eigen::ArrayXd;
 using Eigen::MatrixXd;
@@ -67,6 +68,11 @@ MatrixXd remove_col_from_inverse(MatrixXd old_inverse, int i){
 }
 
 MatrixXd remove_col_from_dict(MatrixXd d, int i){
+	if(i > d.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove column " << i << " from dictionary of length " << d.cols() << ".";
+		throw std::invalid_argument(ss.str());
+	}
 	// permute the target column to the end
 	for(int j = 0; j < d.cols(); ++j){
 		if(j > i){
@@ -140,8 +146,66 @@ bool invert_Kdd_test(int rows, int cols, double threshold, std::vector<double> &
 }
 
 
+bool remove_col_from_dict_test(){
+	MatrixXd d(2,5);
+	d << 1.6, 2.8, .5, -.7, 2.8,
+		-3.2, .2, -.5, 1.7, .2;
+
+	// remove a column in the middle
+	MatrixXd removed_middle(2,4);
+	removed_middle << 1.6, 2.8, -.7, 2.8,
+					 -3.2, .2, 1.7, .2;
+	if(!removed_middle.isApprox(remove_col_from_dict(d, 2))){
+		return false;
+	}
+	
+	// remove the first column
+	MatrixXd removed_first(2,4);
+	removed_first << 2.8, .5, -.7, 2.8,
+					.2, -.5, 1.7, .2;
+	if(!removed_first.isApprox(remove_col_from_dict(d,0))){
+		return false;
+	}
+	
+	// remove the last column
+	MatrixXd removed_last(2,4);
+	removed_last << 1.6, 2.8, .5, -.7,
+					-3.2, .2, -.5, 1.7;
+	if(!removed_last.isApprox(remove_col_from_dict(d,4))){
+		return false;
+	}
+
+	// intentionally pass an invalid index
+	try{
+		remove_col_from_dict(d,-1);
+		return false;
+	}
+	catch (const invalid_argument& ia){
+		// everything is fine
+	}
+	try{
+		remove_col_from_dict(d,5);
+		return false;
+	}
+	catch (const invalid_argument& ia){
+		// everything is fine
+	}	
+	return true;
+}
+
+// tests remove_col_from_inverse() by removing each column from dictionary and checking that the resulting inverse is valid
+// this is done by checking ((Kdd_inverse * Kdd) - MatrixXd::Identity()).norm() < threshold for each kernel matrix and associated inverse computed 
+// by excluding a single value from the dictionary
+bool remove_col_test(){
+
+}
+
+
 int main(){
-	int samples = 41;
+
+	cout << "remove_col_from_dict works: " << (remove_col_from_dict_test()?"True":"False") << endl;
+
+	int samples = 10;
 	for(int s = 2; s < samples; ++s){
 		int tries = 200;
 		std::vector<double> norms;
@@ -156,6 +220,8 @@ int main(){
 		cout << "Samples: " << s << endl;
 		cout << "Average norm of difference between identity and Kdd * inverse_Kdd: " << mean << endl << endl;
 	}
+
+
 
 /*	// initialization
 	// dictionary
