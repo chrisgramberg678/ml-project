@@ -32,7 +32,7 @@ MatrixXd add_cols_to_inverse(MatrixXd _KDD, MatrixXd _KDD_inverse, MatrixXd _dic
 			// create some intermediary values
 			VectorXd u1 = _k->gram_matrix(_dictionary.leftCols(c), v);
 			VectorXd u2 = _KDD_inverse * u1;
-			double d = 1;///(v.transpose() * v - u1.transpose() * u2).value();
+			double d = 1/(1 - (u1.transpose() * u2).value());
 			VectorXd u3 = d * u2;
 			MatrixXd top_left = _KDD_inverse + d * u2 * u2.transpose();
 			// create _KDD_inverse from the intermediary values
@@ -48,21 +48,35 @@ MatrixXd add_cols_to_inverse(MatrixXd _KDD, MatrixXd _KDD_inverse, MatrixXd _dic
 }
 
 MatrixXd remove_col_from_inverse(MatrixXd old_inverse, int i){
+	if(old_inverse.rows() != old_inverse.cols()){
+		stringstream ss;
+		ss << "Invalid inverse matrix. Number of rows and columns should match. Given: rows = " << old_inverse.rows() << ", cols = " << old_inverse.cols();
+		throw std::invalid_argument(ss.str());
+	}
+	if(i > old_inverse.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove column " << i << " from inverse matrix with " << old_inverse.cols() << " columns.";
+		throw std::invalid_argument(ss.str());
+	}
 	// permute the ith column and ith column to the last column and last row
-	VectorXd ith_row = old_inverse.row(i);
 	VectorXd ith_col = old_inverse.col(i);
-	for(int j = 0; j < old_inverse.rows(); ++j){
+	double ith_col_i = ith_col(i);
+	for(int j = 0; j < old_inverse.cols(); ++j){
 		if(j > i){
 			old_inverse.row(j - 1) = old_inverse.row(j);
 			old_inverse.col(j - 1) = old_inverse.col(j);
+			ith_col(j - 1) = ith_col(j);
 		}
 	}
-	old_inverse.bottomRows(1) = ith_row.transpose();
+	ith_col(ith_col.size() - 1) = ith_col_i;
+	old_inverse.bottomRows(1) = ith_col.transpose();
 	old_inverse.rightCols(1) = ith_col;
+	// create some intermediary values
 	MatrixXd top_left = old_inverse.topLeftCorner(old_inverse.rows() - 1, old_inverse.cols() - 1);
 	double d = old_inverse(old_inverse.rows() - 1, old_inverse.rows() - 1);
 	VectorXd u3 = -1 * old_inverse.topRightCorner(old_inverse.rows() - 1, 1);
-	VectorXd u2 = (1/d) * u3;
+	VectorXd u2 = u3/d;
+	// build the new inverse out of those values
 	MatrixXd new_inverse = top_left - (d * (u2 * u2.transpose()));
 	return new_inverse;
 }
@@ -104,47 +118,6 @@ void compare_inverses(){
 	cout << "*********************************\n";
 	// compare the inverse * the kernel matrx to the identity using the matrix norm
 }
-
-// tests the inversion of a matrix built by add_cols_to_inverse() using a dictionary of size rows, cols
-// here, rows are features and columns are samples, this means that our Kernel matrix and the corresponding
-// inverse will be cols x cols
-// returns ((Kdd_inverse * Kdd) - MatrixXd::Identity()).norm() < threshold 
-bool invert_Kdd_test(int rows, int cols, double threshold, std::vector<double> &norms, bool verbose=false){
-	gaussian_kernel gk(.5);
-
-	std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::normal_distribution<> nd{0,5};
-
-	MatrixXd d(rows, cols);
-
-	for(int i = 0; i < rows; ++i){
-		for(int j = 0; j < cols; ++j)
-			d(i,j) = nd(gen);
-	}
-	MatrixXd Kdd = gk.gram_matrix(d,d);
-	MatrixXd inverse_Kdd = add_cols_to_inverse(Kdd, MatrixXd(), d, &gk);
-	MatrixXd approx_identity = Kdd * inverse_Kdd;
-	MatrixXd identity = MatrixXd::Identity(Kdd.rows(),Kdd.cols());
-	// the norm of the difference between the approx_identity and the the identity should be small
-	MatrixXd diff = approx_identity - identity;
-	double norm = diff.norm();
-	norms.push_back(norm);
-	if(verbose){
-		std::stringstream info;
-		info << "Dictonary - Rows: " << rows << ". Cols: " << cols << ".\n";
-		info << d << endl << endl;
-		info << "Kdd:\n" << Kdd << endl << endl;
-		info << "Inverse:\n" << inverse_Kdd << endl << endl;
-		info << "Eigen inverse:\n" << Kdd.inverse() << endl << endl;
-		info << "Kdd * inverse_Kdd:\n" << approx_identity << endl << endl;
-		info << "Difference from identity:\n" << diff << endl << endl;
-		info << "Norm < threshold: " << norm << " < " << threshold << " -> " << ((norm < threshold) ? "True" : "False") << endl; 
-		cout << info.str() << endl;
-	}
-	return norm < threshold;
-}
-
 
 bool remove_col_from_dict_test(){
 	MatrixXd d(2,5);
@@ -193,39 +166,154 @@ bool remove_col_from_dict_test(){
 	return true;
 }
 
-// tests remove_col_from_inverse() by removing each column from dictionary and checking that the resulting inverse is valid
-// this is done by checking ((Kdd_inverse * Kdd) - MatrixXd::Identity()).norm() < threshold for each kernel matrix and associated inverse computed 
-// by excluding a single value from the dictionary
-bool remove_col_test(){
+// tests the inversion of a matrix built by add_cols_to_inverse() using a dictionary of size rows, cols
+// here, rows are features and columns are samples, this means that our Kernel matrix and the corresponding
+// inverse will be cols x cols
+// returns ((Kdd_inverse * Kdd) - MatrixXd::Identity()).norm() < threshold 
+bool invert_Kdd_test(int rows, int cols, double threshold, std::vector<double> &norms, bool verbose=false){
+	gaussian_kernel gk(.5);
 
+	std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> nd{0,5};
+
+	MatrixXd d(rows, cols);
+
+	for(int i = 0; i < rows; ++i){
+		for(int j = 0; j < cols; ++j)
+			d(i,j) = nd(gen);
+	}
+
+	MatrixXd Kdd = gk.gram_matrix(d,d);
+	MatrixXd inverse_Kdd = add_cols_to_inverse(Kdd, MatrixXd(), d, &gk);
+	MatrixXd approx_identity = Kdd * inverse_Kdd;
+	MatrixXd identity = MatrixXd::Identity(Kdd.rows(),Kdd.cols());
+	// the norm of the difference between the approx_identity and the the identity should be small
+	MatrixXd diff = approx_identity - identity;
+	double norm = diff.norm();
+	norms.push_back(norm);
+	if(verbose && norm >= threshold){
+		std::stringstream info;
+		info << "Dictonary - Rows: " << rows << ". Cols: " << cols << ".\n";
+		info << d << endl << endl;
+		info << "Kdd:\n" << Kdd << endl << endl;
+		info << "Inverse:\n" << inverse_Kdd << endl << endl;
+		info << "Eigen inverse:\n" << Kdd.inverse() << endl << endl;
+		info << "Kdd * inverse_Kdd:\n" << approx_identity << endl << endl;
+		info << "Difference from identity:\n" << diff << endl << endl;
+		info << "Norm < threshold: " << norm << " < " << threshold << " -> " << ((norm < threshold) ? "True" : "False") << endl; 
+		cout << info.str() << endl;
+	}
+	return norm < threshold;
 }
 
 
-int main(){
+// tests remove_col_from_inverse() by removing each column from dictionary and checking that the resulting inverse is valid
+// this is done by checking ((Kdd_inverse * Kdd) - MatrixXd::Identity()).norm() < threshold for each kernel matrix and associated inverse computed 
+// by excluding a single value from the dictionary
+// this depends on remove_col_from_dict working properly
+bool remove_col_from_inverse_test(int rows, int cols, double threshold, std::vector<double> &norms, bool verbose=false){
+	gaussian_kernel gk(.5);
 
-	cout << "remove_col_from_dict works: " << (remove_col_from_dict_test()?"True":"False") << endl;
+	std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> nd{0,5};
+    bool vals[rows];
 
-	int samples = 10;
+	MatrixXd d_t1(rows, cols);
+
+	// initialize the dictionary randomly
+	for(int i = 0; i < rows; ++i){
+		for(int j = 0; j < cols; ++j)
+			d_t1(i,j) = nd(gen);
+	}
+
+	// compute a gram matrix and inverse for t1
+	MatrixXd Kdd_t1 = gk.gram_matrix(d_t1,d_t1);
+	MatrixXd inverse_Kdd_t1 = add_cols_to_inverse(Kdd_t1, MatrixXd(), d_t1, &gk);
+	// compute the gram matrix and inverse for each column of d_t1 being removed
+	for(int c = 0; c < cols; ++c){
+		MatrixXd d_t = remove_col_from_dict(d_t1, c);
+		MatrixXd Kdd_t = gk.gram_matrix(d_t, d_t);
+		MatrixXd Kdd_t_inverse = remove_col_from_inverse(inverse_Kdd_t1, c);
+		MatrixXd approx_identity = Kdd_t * Kdd_t_inverse;
+		MatrixXd identity = MatrixXd::Identity(Kdd_t.rows(),Kdd_t.cols());
+		// the norm of the difference between the approx_identity and the the identity should be small
+		MatrixXd diff = approx_identity - identity;
+		double norm = diff.norm();
+		norms.push_back(norm);
+		if(verbose && norm >= threshold){
+			stringstream info;
+			info << "***************************************************************\n";
+			info << "Dictonary - Rows: " << rows << ". Cols: " << cols << " to " << cols - 1 << ".\n";
+			info << d_t1 << endl << endl;
+			info << "removing col: " << c << endl;
+			info << d_t << endl << endl;
+			info << "Kdd_t:\n" << Kdd_t << endl << endl;
+			info << "Inverse:\n" << Kdd_t_inverse << endl << endl;
+			info << "Eigen inverse:\n" << Kdd_t.inverse() << endl << endl;
+			info << "Kdd * Kdd_t_inverse:\n" << approx_identity << endl << endl;
+			info << "Difference from identity:\n" << diff << endl << endl;
+			info << "Norm < threshold: " << norm << " < " << threshold << " -> " << ((norm < threshold) ? "True" : "False") << endl; 
+			info << "***************************************************************\n";
+			cout << info.str() << endl;
+		}
+		vals[c] = norm < threshold;
+	}
+	bool return_val = true;
+	for(auto v : vals){
+		return_val &= v;
+	}
+	return return_val;
+}
+
+bool test_inverting_inverse_matrices(){
+	int samples = 30;
+	int tries = 200;
+	std::vector<bool> results;
 	for(int s = 2; s < samples; ++s){
-		int tries = 200;
 		std::vector<double> norms;
 		for(int t = 0; t < tries; ++t){
-			invert_Kdd_test(2, s, 1, norms);
+			results.push_back(invert_Kdd_test(2, s, .00001, norms, true));
 		}
 		double mean = 0;
 		for(auto n : norms){
 			mean += n;
 		}
 		mean/=tries;
-		cout << "Samples: " << s << endl;
-		cout << "Average norm of difference between identity and Kdd * inverse_Kdd: " << mean << endl << endl;
+		// cout << "Samples: " << s << endl;
+		// cout << "Constructed Inverse: Average norm of difference between identity and Kdd * inverse_Kdd: " << mean << endl << endl;
 	}
 
+	// this will help keep this from taking a long time because we try removing each possible column.
+	for(int s = 2; s < samples; ++s){
+		std::vector<double> norms;
+		for(int t = 0; t < tries; ++t){
+			results.push_back(remove_col_from_inverse_test(2, s, .00001, norms, true));
+		}
+		double mean = 0;
+		for(auto n : norms){
+			mean += n;
+		}
+		mean/=norms.size();
+		// cout << "Samples: " << s << endl;
+		// cout << "Removed a col Inverse: Average norm of difference between identity and Kdd * inverse_Kdd: " << mean << endl << endl;
+	}
+	bool result = true;
+	for(auto r : results){
+		result &= r;
+	}
+	return result;
+}
 
 
-/*	// initialization
+int main(){
+	// cout << "remove_col_from_dict works: " << (remove_col_from_dict_test() ? "True" : "False") << endl;
+	// cout << "inverting matrices works: " << (test_inverting_inverse_matrices() ? "True" : "False") << endl;
+
+	// initialization
 	// dictionary
-	MatrixXd d_t1(2,5);
+/*	MatrixXd d_t1(2,5);
 	d_t1 << 1.6, 2.8, .5, -.7, 2.8,
 			-3.2, .2, -.5, 1.7, .2;
     VectorXd new_sample = d_t1.col(d_t1.cols()-1);
@@ -261,11 +349,9 @@ int main(){
 			// 		"]*gram_matrix[" << gk.gram_matrix(d_t1,d_temp).rows() << "," << gk.gram_matrix(d_t1,d_temp).cols() <<
 			// 		"]*_KDD_inverse[" << _KDD_inverse.rows() << "," << _KDD_inverse.cols() << "]\n";
 			VectorXd beta = .5 * (w_t1.transpose() * gk.gram_matrix(d_t1,d_temp) * _KDD_inverse_temp);
-			// approx_f = approx_f/(1+approx_f);
-			double function_diff = w_t1.transpose() * gk.gram_matrix()
-			double err = pow(error,2);
+			double residual error = w_t1.transpose() * gk.gram_matrix(d_t1,d+)
 			cout << "d_temp:\n" << d_temp << endl;
-			cout << "err: " << err << endl;
+			cout << "function_diff: " << err << endl;
 			err_map.insert({i, err});
 			beta_map.insert({i, beta});
 		}
