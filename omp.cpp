@@ -25,10 +25,10 @@ MatrixXd add_cols_to_inverse(MatrixXd _KDD, MatrixXd _KDD_inverse, MatrixXd _dic
 		// add a single row and column
 		else{
 			// create some intermediary values
-			cout << "cols vs sample\n";
+			// cout << "cols vs sample\n";
 			VectorXd u1 = _k->gram_matrix_stable(_dictionary.leftCols(c), _dictionary.col(c));
 			VectorXd u2 = _KDD_inverse * u1;
-			cout << "sample vs sample\n";
+			// cout << "sample vs sample\n";
 			double d = 1/(_k->gram_matrix_stable(_dictionary.col(c), _dictionary.col(c)).value() - (u1.transpose() * u2).value());
 			VectorXd u3 = d * u2;
 			MatrixXd top_left = _KDD_inverse + d * u2 * u2.transpose();

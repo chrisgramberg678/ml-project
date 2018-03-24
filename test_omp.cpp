@@ -243,17 +243,17 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 		cout << "*******************************************************************************************************\n";
 		int r = rand();
 		// add or remove
-		if(true/*(r % 3 || d.cols() < 3)*/){
+		if((r % 5 || d.cols() < cols)){
 			cout << "adding ";
-			// add something new
 			if(false){
+				// add something new
 				VectorXd v(rows);
 				v << nd(gen), nd(gen);
 				cout << "new value:\n";// << v << endl;
 				d = add_col_to_dict(d, v);
 			}
-			// add a duplicate
 			else{
+				// add a duplicate
 				cout << "duplicate:\n";// << d.col(r % d.cols()) << endl;
 				d = add_col_to_dict(d, d.col(r % d.cols()));
 			}
@@ -265,7 +265,7 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 		}
 		else{
 			//remove
-			cout << "removing col " << r % d.cols() << ":\n" << d.col(r % d.cols()) << endl;
+			cout << "removing col " << r % d.cols() << endl;//":\n" << d.col(r % d.cols()) << endl;
 			d = remove_col_from_dict(d, r % d.cols());
 			Kdd = remove_sample_from_Kdd(Kdd, r % d.cols());
 			Kdd_inverse = remove_col_from_inverse(Kdd_inverse, r % d.cols());
@@ -275,17 +275,17 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 		if(verbose){
 			stringstream loop;
 			loop << "New dictionary:\n" << d << endl << endl;
-			loop << "New Kdd:\n" << Kdd << endl << endl;
+			loop << "Kdd:\n" << Kdd << endl << endl;
 			loop << "Kdd_inverse:\n" << Kdd_inverse << endl << endl;
-			// loop << "Eigen inverse:\n" << Kdd.inverse() << endl << endl; 
+			loop << "Eigen inverse:\n" << Kdd.inverse() << endl << endl; 
 			// loop << "Kdd * Kdd_inverse(this should look like the identity):\n" << (Kdd * Kdd_inverse) << endl << endl;
 			cout << loop.str();
+			cout << Kdd.rows() << "," << Kdd.cols() << " * " << Kdd_inverse.rows() << "," << Kdd_inverse.cols() << endl;
+			cout << "find the norm\n";
+			cout << diff.norm() << " > " << threshold << " is " << ((diff.norm() > threshold) ? "True" : "False") << endl; 
 			// string a;
 			// cin >> a;
 		}
-		cout << Kdd.rows() << "," << Kdd.cols() << " * " << Kdd_inverse.rows() << "," << Kdd_inverse.cols() << endl;
-		cout << "find the norm\n";
-		cout << diff.norm() << " > " << threshold << " is " << ((diff.norm() > threshold) ? "True" : "False") << endl; 
 		if(diff.norm() > threshold){
 			return false;
 		}
@@ -294,7 +294,7 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 }
 
 bool test_inverting_with_duplicates(){
-	return inverting_inverse_with_duplicates_test(2, 4, 100);
+	return inverting_inverse_with_duplicates_test(2, 4, 1e-5);
 }
 
 int main(){
