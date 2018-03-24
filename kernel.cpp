@@ -33,6 +33,23 @@ MatrixXd kernel::gram_matrix(const MatrixXd &X, const MatrixXd &Y){
 	return result;
 }
 
+MatrixXd kernel::gram_matrix_stable(Map<MatrixXd> &X, Map<MatrixXd> &Y){
+	return gram_matrix_stable(MatrixXd(X),MatrixXd(Y));
+}
+
+MatrixXd kernel::gram_matrix_stable(const MatrixXd &X, const MatrixXd &Y){
+	// this value is necessary to avoid getting inf and nan when inverting a gram_matrix where x and y share values
+	double stability = 1e-3;
+	if(X.cols() != 1 && Y.cols() != 1){
+		return gram_matrix(X, Y) + (stability * MatrixXd::Identity(X.cols(), Y.cols()));
+	}
+	else{
+		MatrixXd result = gram_matrix(X, Y);
+		result(result.size() - 1, 0) = result(result.size() - 1, 0) + stability;
+		return result;
+	}
+}
+
 /* Implementation for the linear_kernel class */
 
 linear_kernel::linear_kernel(double c):

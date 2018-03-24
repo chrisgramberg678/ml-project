@@ -14,6 +14,8 @@ class kernel{
 		virtual double k(VectorXd x_i, VectorXd y_j) = 0;
 		MatrixXd gram_matrix(const MatrixXd &X, const MatrixXd &Y);
 		MatrixXd gram_matrix(Map<MatrixXd> &X, Map<MatrixXd> &Y);
+		MatrixXd gram_matrix_stable(Map<MatrixXd> &X, Map<MatrixXd> &Y);
+		MatrixXd gram_matrix_stable(const MatrixXd &X, const MatrixXd &Y);
 };
 
 class linear_kernel : public kernel{
