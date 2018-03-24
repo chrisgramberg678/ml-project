@@ -82,7 +82,7 @@ bool invert_Kdd_test(int rows, int cols, double threshold, std::vector<double> &
 			d(i,j) = nd(gen);
 	}
 
-	MatrixXd Kdd = gk.gram_matrix(d,d);
+	MatrixXd Kdd = gk.gram_matrix_stable(d,d);
 	MatrixXd inverse_Kdd = add_cols_to_inverse(Kdd, MatrixXd(), d, &gk);
 	MatrixXd approx_identity = Kdd * inverse_Kdd;
 	MatrixXd identity = MatrixXd::Identity(Kdd.rows(),Kdd.cols());
@@ -90,15 +90,15 @@ bool invert_Kdd_test(int rows, int cols, double threshold, std::vector<double> &
 	MatrixXd diff = approx_identity - identity;
 	double norm = diff.norm();
 	norms.push_back(norm);
-	if(verbose && norm >= threshold){
+	if(verbose){
 		std::stringstream info;
 		info << "Dictonary - Rows: " << rows << ". Cols: " << cols << ".\n";
-		info << d << endl << endl;
-		info << "Kdd:\n" << Kdd << endl << endl;
-		info << "Inverse:\n" << inverse_Kdd << endl << endl;
-		info << "Eigen inverse:\n" << Kdd.inverse() << endl << endl;
-		info << "Kdd * inverse_Kdd:\n" << approx_identity << endl << endl;
-		info << "Difference from identity:\n" << diff << endl << endl;
+		// info << d << endl << endl;
+		// info << "Kdd:\n" << Kdd << endl << endl;
+		// info << "Inverse:\n" << inverse_Kdd << endl << endl;
+		// info << "Eigen inverse:\n" << Kdd.inverse() << endl << endl;
+		// info << "Kdd * inverse_Kdd:\n" << approx_identity << endl << endl;
+		// info << "Difference from identity:\n" << diff << endl << endl;
 		info << "Norm < threshold: " << norm << " < " << threshold << " -> " << ((norm < threshold) ? "True" : "False") << endl; 
 		cout << info.str() << endl;
 	}
@@ -126,12 +126,12 @@ bool remove_col_from_inverse_test(int rows, int cols, double threshold, std::vec
 	}
 
 	// compute a gram matrix and inverse for t1
-	MatrixXd Kdd_t1 = gk.gram_matrix(d_t1,d_t1);
+	MatrixXd Kdd_t1 = gk.gram_matrix_stable(d_t1,d_t1);
 	MatrixXd inverse_Kdd_t1 = add_cols_to_inverse(Kdd_t1, MatrixXd(), d_t1, &gk);
 	// compute the gram matrix and inverse for each column of d_t1 being removed
 	for(int c = 0; c < cols; ++c){
 		MatrixXd d_t = remove_col_from_dict(d_t1, c);
-		MatrixXd Kdd_t = gk.gram_matrix(d_t, d_t);
+		MatrixXd Kdd_t = gk.gram_matrix_stable(d_t, d_t);
 		MatrixXd Kdd_t_inverse = remove_col_from_inverse(inverse_Kdd_t1, c);
 		MatrixXd approx_identity = Kdd_t * Kdd_t_inverse;
 		MatrixXd identity = MatrixXd::Identity(Kdd_t.rows(),Kdd_t.cols());
@@ -139,18 +139,18 @@ bool remove_col_from_inverse_test(int rows, int cols, double threshold, std::vec
 		MatrixXd diff = approx_identity - identity;
 		double norm = diff.norm();
 		norms.push_back(norm);
-		if(verbose && norm >= threshold){
+		if(verbose){
 			stringstream info;
 			info << "***************************************************************\n";
 			info << "Dictonary - Rows: " << rows << ". Cols: " << cols << " to " << cols - 1 << ".\n";
-			info << d_t1 << endl << endl;
-			info << "removing col: " << c << endl;
-			info << d_t << endl << endl;
-			info << "Kdd_t:\n" << Kdd_t << endl << endl;
-			info << "Inverse:\n" << Kdd_t_inverse << endl << endl;
-			info << "Eigen inverse:\n" << Kdd_t.inverse() << endl << endl;
-			info << "Kdd * Kdd_t_inverse:\n" << approx_identity << endl << endl;
-			info << "Difference from identity:\n" << diff << endl << endl;
+			// info << d_t1 << endl << endl;
+			// info << "removing col: " << c << endl;
+			// info << d_t << endl << endl;
+			// info << "Kdd_t:\n" << Kdd_t << endl << endl;
+			// info << "Inverse:\n" << Kdd_t_inverse << endl << endl;
+			// info << "Eigen inverse:\n" << Kdd_t.inverse() << endl << endl;
+			// info << "Kdd * Kdd_t_inverse:\n" << approx_identity << endl << endl;
+			// info << "Difference from identity:\n" << diff << endl << endl;
 			info << "Norm < threshold: " << norm << " < " << threshold << " -> " << ((norm < threshold) ? "True" : "False") << endl; 
 			info << "***************************************************************\n";
 			cout << info.str() << endl;
@@ -164,14 +164,14 @@ bool remove_col_from_inverse_test(int rows, int cols, double threshold, std::vec
 	return return_val;
 }
 
-bool test_inverting_kernel_matrices(){
+bool test_inverting_kernel_matrices(bool verbose=false){
 	int samples = 30;
 	int tries = 200;
 	std::vector<bool> results;
 	for(int s = 2; s < samples; ++s){
 		std::vector<double> norms;
 		for(int t = 0; t < tries; ++t){
-			results.push_back(invert_Kdd_test(2, s, .00001, norms, true));
+			results.push_back(invert_Kdd_test(2, s, .00001, norms, verbose));
 		}
 		double mean = 0;
 		for(auto n : norms){
@@ -185,7 +185,7 @@ bool test_inverting_kernel_matrices(){
 	for(int s = 2; s < samples; ++s){
 		std::vector<double> norms;
 		for(int t = 0; t < tries; ++t){
-			results.push_back(remove_col_from_inverse_test(2, s, .00001, norms, true));
+			results.push_back(remove_col_from_inverse_test(2, s, .00001, norms, verbose));
 		}
 		double mean = 0;
 		for(auto n : norms){
@@ -234,9 +234,9 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 		cout << "before the loop\n";
 		stringstream ss;
 		ss << "initial dictionary:\n" << d << endl << endl;
-		ss << "initial Kdd:\n" << Kdd << endl << endl;
-		ss << "initial inverse:\n" << Kdd_inverse << endl << endl;
-		ss << "eigen inverse:\n" << Kdd.inverse() << endl << endl;
+		// ss << "initial Kdd:\n" << Kdd << endl << endl;
+		// ss << "initial inverse:\n" << Kdd_inverse << endl << endl;
+		// ss << "eigen inverse:\n" << Kdd.inverse() << endl << endl;
 		cout << ss.str();
 	}	
 	for(int i = 0; i < 200; ++i){
@@ -258,7 +258,8 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 				d = add_col_to_dict(d, d.col(r % d.cols()));
 			}
 			// update Kdd
-			Kdd = add_samples_to_Kdd(Kdd, d, &gk);
+			// Kdd = add_samples_to_Kdd(Kdd, d, &gk);
+			Kdd = gk.gram_matrix_stable(d,d);
 			// update inverse
 			Kdd_inverse = add_cols_to_inverse(Kdd, Kdd_inverse, d, &gk);
 		}
@@ -276,14 +277,14 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 			loop << "New dictionary:\n" << d << endl << endl;
 			loop << "New Kdd:\n" << Kdd << endl << endl;
 			loop << "Kdd_inverse:\n" << Kdd_inverse << endl << endl;
-			loop << "Eigen inverse:\n" << Kdd.inverse() << endl << endl; 
-			loop << "Kdd * Kdd_inverse(this should look like the identity):\n" << (Kdd * Kdd_inverse) << endl << endl;
+			// loop << "Eigen inverse:\n" << Kdd.inverse() << endl << endl; 
+			// loop << "Kdd * Kdd_inverse(this should look like the identity):\n" << (Kdd * Kdd_inverse) << endl << endl;
 			cout << loop.str();
-			cout << Kdd.rows() << "," << Kdd.cols() << " * " << Kdd_inverse.rows() << "," << Kdd_inverse.cols() << endl;
-			cout << "find the norm\n";
 			// string a;
 			// cin >> a;
 		}
+		cout << Kdd.rows() << "," << Kdd.cols() << " * " << Kdd_inverse.rows() << "," << Kdd_inverse.cols() << endl;
+		cout << "find the norm\n";
 		cout << diff.norm() << " > " << threshold << " is " << ((diff.norm() > threshold) ? "True" : "False") << endl; 
 		if(diff.norm() > threshold){
 			return false;

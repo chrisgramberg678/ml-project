@@ -45,7 +45,10 @@ MatrixXd kernel::gram_matrix_stable(const MatrixXd &X, const MatrixXd &Y){
 	}
 	else{
 		MatrixXd result = gram_matrix(X, Y);
-		result(result.size() - 1, 0) = result(result.size() - 1, 0) + stability;
+		if(result(result.size() - 1, 0) == 1){
+			result(result.size() - 1, 0) = result(result.size() - 1, 0) + stability;
+			cout << "adjusting result:\n" << result << endl << endl;
+		}
 		return result;
 	}
 }
