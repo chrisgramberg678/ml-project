@@ -20,7 +20,6 @@ class TestStochasticGradientDescent(unittest.TestCase):
 		next_loss = 1
 		loops = 0
 		# weights = np.zeros((self.weights,1))
-		weights = np.random.rand(self.weights,1)
 		for e in range(self.epochs):
 			# shuffle the data before training by batch size, using the loss as a seed to keep data lined up
 			seed = e + int(abs(prev_loss*1000000)%2**32)
@@ -29,7 +28,7 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			np.random.seed(seed)
 			np.random.shuffle(ytrain)
 			for i in range(0, self.N, batch_size):
-				weights = solver.fit(weights, self.step_size, Xtrain[i:i+batch_size], ytrain[i:i+batch_size])
+				solver.fit(self.step_size, Xtrain[i:i+batch_size], ytrain[i:i+batch_size])
 			# update the loss 
 			prev_loss = next_loss
 			next_loss = solver.get_loss_values()[-1]
@@ -72,7 +71,7 @@ class TestStochasticGradientDescent(unittest.TestCase):
 		self.step_size = 0.3
 		for i in range(3):
 			k = ml.gaussian_kernel(.1)
-			m = ml.sklr_model(k, 0)
+			m = ml.sklr_model(k, 0, .001)
 			train_data, train_labels, validation_data, validation_labels = test_util.read_data(str(i))
 			losses = self.train(20, m, (train_data[:self.N], train_labels[:self.N]))
 			predictions = m.predict(validation_data).flatten()

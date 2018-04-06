@@ -7,7 +7,10 @@
 #include <random>
 #include <vector>
 #include <stdexcept>
+#ifndef KERNEL_HEADER
+#define KERNEL_HEADER
 #include "kernel.h"
+#endif
 using Eigen::ArrayXd;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -77,6 +80,11 @@ MatrixXd remove_col_from_inverse(MatrixXd old_inverse, int i){
 }
 
 MatrixXd remove_sample_from_Kdd(MatrixXd Kdd, int i){
+	if(i > Kdd.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove sample " << i << " from kernel matrix with dims [" << Kdd.rows() << ", " << Kdd.cols() << "].";
+		throw std::invalid_argument(ss.str());
+	}
 	for(int j = i + 1; j < Kdd.cols(); ++j){
 		Kdd.row(j - 1) = Kdd.row(j);
 		Kdd.col(j - 1) = Kdd.col(j);

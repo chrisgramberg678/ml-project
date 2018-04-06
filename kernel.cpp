@@ -45,9 +45,8 @@ MatrixXd kernel::gram_matrix_stable(const MatrixXd &X, const MatrixXd &Y){
 	}
 	else{
 		MatrixXd result = gram_matrix(X, Y);
-		if(result.size() == 1 && result(0, 0) == 1){
-			result(0, 0) = result(0, 0) + stability;
-			// cout << "adjusting result:\n" << result << endl << endl;
+		if(result(result.size() - 1, 0) == 1){
+			result(result.size() - 1, 0) = result(result.size() - 1, 0) + stability;
 		}
 		return result;
 	}
@@ -87,5 +86,6 @@ gaussian_kernel::gaussian_kernel(double s):
 
 // http://crsouza.com/2010/03/17/kernel-functions-for-machine-learning-applications/#gaussian
 double gaussian_kernel::k(VectorXd x_i, VectorXd y_j){
+	// cout << "WHY\n";
 	return exp(-1 * (x_i - y_j).array().square().sum() / (2 * _s * _s));
 }

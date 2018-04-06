@@ -51,7 +51,7 @@ class batch_gradient_descent : public optomization_solver_base{
 		batch_gradient_descent(Map<MatrixXd> X, Map<VectorXd> y, model* M);
 		
 		// does the actual work of fitting a model to the data
-		VectorXd fit(Map<VectorXd> init, double gamma, string convergence_type = "none", double conv = 1000000);
+		VectorXd fit(double gamma, string convergence_type = "none", double conv = 1000000);
 };
 
 
@@ -69,6 +69,6 @@ class stochastic_gradient_descent : public optomization_solver_base{
 		
 		// does a single step using only set of data
 		// needs to query the gradient and update the model, but the model should not update itself
-		VectorXd fit(Map<VectorXd> prev, double gamma, Map<MatrixXd> X, Map<VectorXd> y);
+		VectorXd fit(double gamma, Map<MatrixXd> X, Map<VectorXd> y);
 		
 };

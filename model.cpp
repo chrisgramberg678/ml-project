@@ -4,26 +4,37 @@
 model::model():
 	_parametric(0)
 	{}
+
 model::model(bool parametric):
 	_parametric(parametric)
 	{}
+
 bool model::parametric(){return _parametric;}
-VectorXd model::gradient(MatrixXd X, VectorXd y){return VectorXd();}
-double model::loss(MatrixXd X, VectorXd y){return 0;}
-VectorXd model::predict(Map<MatrixXd> X){return VectorXd::Zero(X.rows());}
+
 void model::init_weights(int num_weights){
-	_weights = VectorXd::Zero(num_weights);
-	// taken directly from the http://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution
-	// TODO: consider allowing the model weights to be initialized in different ways
-	random_device rd;  
-    mt19937 gen(rd()); 
-    uniform_real_distribution<> dis(0.0, 1.0);
+	_weights = VectorXd(num_weights);
+	std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> nd{0,5};
 	for(int i = 0; i < num_weights; ++i){
-		_weights(i) = dis(gen);
+			_weights(i) = nd(gen);
 	}
 }
-void model::init_weights(VectorXd init){
-	_weights = init;
+
+void model::update_weights(VectorXd new_w){
+	_weights = new_w;
+}
+
+void model::update_weights(VectorXd new_w, MatrixXd X){
+	_weights = new_w;
+}
+
+VectorXd model::get_weights(){
+	return _weights;
+}
+
+double model::loss(Map<MatrixXd> X, Map<VectorXd> y){
+	this->loss(MatrixXd(X),VectorXd(y));
 }
 
 // **********************************************
@@ -97,13 +108,11 @@ VectorXd binary_logistic_regression_model::predict(Map<MatrixXd> X){
 	// P(y_i=1|x_i) = exp(w.transpose() * x_i)/(1 + exp(w.transpose() * x_i)) 
 	int s = X.cols();
 	VectorXd probabilities = VectorXd::Zero(s);
-	VectorXd labels = VectorXd::Zero(s);
 	for(int c = 0; c < s; ++c){
 		double e = exp(_weights.transpose() * X.col(c));
 		probabilities(c) = e/(e+1);
-		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
 	}
-	return labels;
+	return probabilities;
 }
 
 // **********************************************************
@@ -144,12 +153,7 @@ double kernel_binary_logistic_regression_model::loss(MatrixXd X, VectorXd y){
 	}
 	double loss = 0;
 	for(int i = 0; i < X.cols(); ++i){
-		VectorXd kxx_i = _k->gram_matrix(X, X.col(i));
-		double e = exp(_weights.transpose() * kxx_i);
-		double id = (y(i) == 0 ? 1 : 0);
-		loss -= log(1 + e);
-		double temp = _weights.transpose() * kxx_i;
-		loss -= temp * id;
+		loss += log(1+exp(_weights.transpose() * _KXX.col(i)) + 1e-3) - (y(i) * _weights.transpose() * _KXX.col(i));
 	}
 	loss /= X.cols();
 	loss += (_lambda/2 * (_weights.transpose() * _KXX)* _weights);
@@ -160,14 +164,12 @@ VectorXd kernel_binary_logistic_regression_model::predict(Map<MatrixXd> X){
 	// P(y_i=1|x_i) = exp(w.transpose() * kxx_i)/(1 + exp(w.transpose() * kxx_i))
 	int s = X.cols();
 	VectorXd probabilities = VectorXd::Zero(s);
-	VectorXd labels = VectorXd::Zero(s);
 	for(int c = 0; c < s; ++c){
 		VectorXd kxx_i = _k->gram_matrix(_X_train, X.col(c));
 		double e = exp(_weights.transpose() * (kxx_i));
 		probabilities(c) = e/(e+1);
-		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
 	}
-	return labels;
+	return probabilities;
 }
 
 // **********************************************************************************************
@@ -176,8 +178,9 @@ VectorXd kernel_binary_logistic_regression_model::predict(Map<MatrixXd> X){
 
 stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(){}
 
-stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(kernel* k, double lambda):
+stochastic_kernel_logistic_regression_model::stochastic_kernel_logistic_regression_model(kernel* k, double lambda, double err_max):
 	kernel_binary_logistic_regression_model(k, lambda),
+	_err_max(err_max),
 	_dictionary(),
 	_KDD()
 	{}
@@ -201,8 +204,19 @@ VectorXd stochastic_kernel_logistic_regression_model::gradient(MatrixXd X, Vecto
 		// append the new weight to the result
 		result(_weights.size() + b) = weight/B;
 	}
-	update_dictionary(X);
 	return result;
+}
+
+void stochastic_kernel_logistic_regression_model::update_weights(VectorXd new_w, MatrixXd X){
+	// update the weights
+	_weights = new_w;
+	// update the dictionary
+	update_dictionary(X);
+	// update KDD and KDD^-1
+	update_KDD();
+	update_KDD_inverse();
+	// run omp to prune the dictionary
+	prune_dictionary();
 }
 
 void stochastic_kernel_logistic_regression_model::update_dictionary(MatrixXd X){
@@ -221,25 +235,164 @@ void stochastic_kernel_logistic_regression_model::update_dictionary(MatrixXd X){
 		_dictionary.col(old_size + b) = X.col(b);
 	}
 }
+
 void stochastic_kernel_logistic_regression_model::update_KDD(){
 	if(_KDD.size() == 0){
-		_KDD = _k->gram_matrix(_dictionary,_dictionary);
+		_KDD = _k->gram_matrix_stable(_dictionary,_dictionary);
 	}
 	// instead of recalculating the entire matrix just copy the old parts and compute the new
 	else{
-		int diff = _dictionary.cols() - _KDD.cols();
-		_KDD.conservativeResize(_KDD.rows() + diff, _KDD.cols() + diff);
-		for(int i = diff; i < _dictionary.cols(); ++i){
-			for(int j = 0; j < i; ++j){
-				double temp = _k->k(_dictionary.col(j), _dictionary.col(i));
-				_KDD(i,j) = temp;
-				_KDD(j,i) = temp;
-			}
-			_KDD(i,i) = 1;
+		int i = _KDD.cols();
+		_KDD.conservativeResize(_dictionary.cols(), _dictionary.cols());
+		for(; i < _dictionary.cols(); ++i){
+			VectorXd new_col = _k->gram_matrix_stable(_dictionary, _dictionary.col(i));
+			_KDD.col(i) = new_col;
+			_KDD.row(i) = new_col.transpose();
 		}
 	}
 }
 
+void stochastic_kernel_logistic_regression_model::update_KDD_inverse(){
+	// we'll update the iverse matrix iteratively for each new dictionary value 
+	while(_KDD_inverse.cols() < _KDD.cols()){
+		int c = _KDD_inverse.cols();
+		// the one column version of the inverse is a 1x1 matrix with the value (K_DD(0,0))^-1.
+		if(c == 0){
+			_KDD_inverse = MatrixXd(1,1);
+			_KDD_inverse(0,0) = 1.0/_KDD(0,0);
+		}
+		// add a single row and column
+		else{
+			// create some intermediary values
+			// cout << "cols vs sample\n";
+			VectorXd u1 = _k->gram_matrix_stable(_dictionary.leftCols(c), _dictionary.col(c));
+			VectorXd u2 = _KDD_inverse * u1;
+			// cout << "sample vs sample\n";
+			double d = 1/(_k->gram_matrix_stable(_dictionary.col(c), _dictionary.col(c)).value() - (u1.transpose() * u2).value());
+			VectorXd u3 = d * u2;
+			MatrixXd top_left = _KDD_inverse + d * u2 * u2.transpose();
+			// create _KDD_inverse from the intermediary values
+			MatrixXd new_KDD_inverse = MatrixXd(c + 1, c + 1);
+			new_KDD_inverse.topLeftCorner(c, c) = top_left;
+			new_KDD_inverse.topRightCorner(c, 1) = -1 * u3;
+			new_KDD_inverse.bottomLeftCorner(1, c) = -1 * u3.transpose();
+			new_KDD_inverse(c, c) = d;
+			_KDD_inverse = new_KDD_inverse;
+		}
+	}
+}
+
+MatrixXd stochastic_kernel_logistic_regression_model::remove_col_from_dict(MatrixXd d, int i){
+	if(i > d.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove column " << i << " from dictionary of length " << d.cols() << ".";
+		throw std::invalid_argument(ss.str());
+	}
+	// permute the target column to the end
+	for(int j = i + 1; j < d.cols(); ++j){
+		d.col(j - 1) = d.col(j);
+	}
+	// return all but the last column
+	return d.leftCols(d.cols() - 1);
+}
+
+MatrixXd stochastic_kernel_logistic_regression_model::remove_sample_from_Kdd(MatrixXd Kdd, int i){
+	if(i > Kdd.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove sample " << i << " from kernel matrix with dims [" << Kdd.rows() << ", " << Kdd.cols() << "].";
+		throw std::invalid_argument(ss.str());
+	}
+	for(int j = i + 1; j < Kdd.cols(); ++j){
+		Kdd.row(j - 1) = Kdd.row(j);
+		Kdd.col(j - 1) = Kdd.col(j);
+	}
+	return Kdd.topLeftCorner(Kdd.rows() - 1, Kdd.cols() -1);
+}
+
+MatrixXd stochastic_kernel_logistic_regression_model::remove_sample_from_inverse(MatrixXd old_inverse, int i){
+	if(old_inverse.rows() != old_inverse.cols()){
+		stringstream ss;
+		ss << "Invalid inverse matrix. Number of rows and columns should match. Given: rows = " << old_inverse.rows() << ", cols = " << old_inverse.cols();
+		throw std::invalid_argument(ss.str());
+	}
+	if(i > old_inverse.cols() - 1 || i < 0){
+		stringstream ss;
+		ss << "Cannot remove column " << i << " from inverse matrix with " << old_inverse.cols() << " columns.";
+		throw std::invalid_argument(ss.str());
+	}
+	// permute the ith column and ith column to the last column and last row
+	VectorXd ith_col = old_inverse.col(i);
+	double ith_col_i = ith_col(i);
+	for(int j = i + 1; j < old_inverse.cols(); ++j){
+		old_inverse.row(j - 1) = old_inverse.row(j);
+		old_inverse.col(j - 1) = old_inverse.col(j);
+		ith_col(j - 1) = ith_col(j);
+	}
+	ith_col(ith_col.size() - 1) = ith_col_i;
+	old_inverse.bottomRows(1) = ith_col.transpose();
+	old_inverse.rightCols(1) = ith_col;
+	// create some intermediary values
+	MatrixXd top_left = old_inverse.topLeftCorner(old_inverse.rows() - 1, old_inverse.cols() - 1);
+	double d = old_inverse(old_inverse.rows() - 1, old_inverse.rows() - 1);
+	VectorXd u3 = -1 * old_inverse.topRightCorner(old_inverse.rows() - 1, 1);
+	VectorXd u2 = u3/d;
+	// build the new inverse out of those values
+	MatrixXd new_inverse = top_left - (d * (u2 * u2.transpose()));
+	return new_inverse;
+}
+
+void stochastic_kernel_logistic_regression_model::prune_dictionary(){
+	while(_dictionary.cols() > 1){
+	// for(int j = 0; j < _dictionary.cols(); ++j){
+		map<int, double> err_map;
+		map<int, VectorXd> beta_map;
+		// compute the error if each value was excluded
+		// cout << "**************\nj = " << j << "\nd:\n" << _dictionary << "\nw:\n" << _weights << endl; 
+		// cout << "**************\nd.cols() = " << _dictionary.cols() << "\nd:\n" << _dictionary << "\nw:\n" << _weights << endl; 
+		for(int i = 0; i < _dictionary.cols(); i++){
+			// cout << "\ni: " << i << endl;
+			// remove the ith value from the dictionary and recompute the kernel matrix and its inverse
+			MatrixXd d_temp = remove_col_from_dict(_dictionary, i);
+			MatrixXd _KDD_temp = remove_sample_from_Kdd(_KDD, i);
+			MatrixXd _KDD_inverse_temp = remove_sample_from_inverse(_KDD_inverse, i);
+			MatrixXd _KDd_temp = _k->gram_matrix(_dictionary, d_temp);
+			VectorXd beta = (_weights.transpose() * _KDd_temp * _KDD_inverse_temp);
+			double residual_error = (_weights.transpose() * _KDD * _weights).value() + 
+									(beta.transpose() * _KDD_temp * beta).value() - 
+									2 * (_weights.transpose() * _KDd_temp * beta).value();
+			// cout << "error = " << first_term << " + " << second_term << " - " <<  third_term << endl;
+			// cout << "d_temp:\n" << d_temp << endl;
+			// cout << "beta:\n" << beta << endl;
+			// cout << "residual_error: " << residual_error << endl;
+			err_map.insert({i, residual_error});
+			beta_map.insert({i, beta});
+		}
+		// find the i that gave the smallest error
+		double err_best = 100000;
+		int best_i = -1;
+		for(int i = 0; i < _dictionary.cols(); i++){
+			auto err_search = err_map.find(i);
+			if(err_search->second < err_best){
+				best_i = err_search->first;
+				err_best = err_search->second;
+			}
+		}
+		if (err_best > _err_max){
+			// cout << "err_best: " << err_best << " not better than err_max: " << _err_max << endl;
+			break;
+		}
+		// cout << "best_i: " << best_i << endl;
+		// cout << "err_best: " << err_best << endl;
+		// update dictionary
+		_dictionary = remove_col_from_dict(_dictionary, best_i);
+		// update weights
+		auto beta_search = beta_map.find(best_i);
+		_weights = beta_search->second;
+		// update kernel matrix and inverse
+		_KDD = remove_sample_from_Kdd(_KDD, best_i);
+		_KDD_inverse = remove_sample_from_inverse(_KDD_inverse, best_i);
+	}
+}
 
 double stochastic_kernel_logistic_regression_model::loss(MatrixXd X, VectorXd y){
 	// ln(1 + exp(f(x))) - (1-y)*f(x) + lambda/2 * ||f||^2
@@ -262,15 +415,11 @@ VectorXd stochastic_kernel_logistic_regression_model::predict(Map<MatrixXd> X){
 	// P(y_i=1|x_i) = 1/(1 + exp(f(x)))
 	int s = X.cols();
 	VectorXd probabilities = VectorXd::Zero(s);
-	VectorXd labels = VectorXd::Zero(s);
 	for(int c = 0; c < s; ++c){
 		double e = exp(f(X.col(c)));
 		probabilities(c) = 1/(e+1);
-		labels(c) = probabilities(c) > .5 ? 1.0 : 0.0;
 	}
-	// cout << "probabilities:" << probabilities << endl;
-	// cout << "labels:" << labels << endl;
-	return labels;
+	return probabilities;
 }
 
 double stochastic_kernel_logistic_regression_model::f(VectorXd x){
@@ -279,4 +428,8 @@ double stochastic_kernel_logistic_regression_model::f(VectorXd x){
 		result += _weights(c) * _k->k(_dictionary.col(c), x);
 	}
 	return result;
+}
+
+MatrixXd stochastic_kernel_logistic_regression_model::dictionary(){
+	return _dictionary;
 }

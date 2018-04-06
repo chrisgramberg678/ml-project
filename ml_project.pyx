@@ -84,7 +84,16 @@ cdef class model:
 	def __dealloc__(self):
 		pass
 
+	def loss(self, np.ndarray X, np.ndarray y):
+		if self.thisptr is NULL:
+			raise Exception("Cannot call loss() on model base class!")
+		else:
+			_x = col_major(X)
+			_y = col_major(y)
+			return self.thisptr.loss(Map[MatrixXd](_x), Map[VectorXd](_y))
+
 	def predict(self, np.ndarray X):
+	''''takes a feature vector X and returns P(label=1|X)'''
 		if self.thisptr is NULL:
 			raise Exception("Cannot call predict() on model base class!")
 		else:
@@ -109,7 +118,11 @@ cdef class blr_model(model):
 
 cdef class kblr_model(model):
 	'''Kernel Binary Logistic Regression Model'''
+
+	cdef kernel _k 
+
 	def __cinit__(self, kernel k, double l):
+		self._k = k
 		self.thisptr = new _kblr_model(k.thisptr, l)
 
 	def __dealloc__(self):
@@ -117,11 +130,19 @@ cdef class kblr_model(model):
 
 cdef class sklr_model(model):
 	'''Stochastic Kernel Binary Logistic Regression Model'''
-	def __cinit__(self, kernel k, double l):
-		self.thisptr = new _sklr_model(k.thisptr, l)
+
+	cdef _sklr_model* sklr_ptr
+	cdef kernel _k 
+
+	def __cinit__(self, kernel k, double l, double err_max):
+		self._k = k
+		self.thisptr = self.sklr_ptr = new _sklr_model(k.thisptr, l, err_max)
 
 	def __dealloc__(self):
 		del self.thisptr
+
+	def dictionary(self):
+		return ndarray_copy(self.sklr_ptr.dictionary()).transpose()
 
 cdef class solver:
 	"""Abstract base class for solvers"""
@@ -152,9 +173,10 @@ cdef class BGD(solver):
 	def __dealloc__(self):
 		del self.thisptr
 		
-	def fit(self, np.ndarray init, double step_size, str conv_type, double conv_val):
-		_init = col_major(init)
-		return ndarray_copy(self.bgdptr.fit(Map[VectorXd](_init), step_size, conv_type, conv_val))
+	def fit(self, double step_size, str conv_type, double conv_val):
+		# call encode on conv_type b/c Cython is expecting a byte type string and Python 3 
+		# string literals are type str
+		return ndarray_copy(self.bgdptr.fit(step_size, conv_type.encode(), conv_val))
 
 cdef class SGD(solver):
 	'''Stochastic Gradient Descent Solver'''
@@ -167,9 +189,7 @@ cdef class SGD(solver):
 	def __dealloc__(self):
 		del self.thisptr
 
-	def fit(self, np.ndarray prev, double step_size, np.ndarray data, np.ndarray labels):
-		_prev = col_major(prev)
+	def fit(self, double step_size, np.ndarray data, np.ndarray labels):
 		_data = col_major(data)
 		_labels = col_major(labels)
-		# print("cython stuff")
-		return ndarray_copy(self.sgdptr.fit(Map[VectorXd](_prev), step_size, Map[MatrixXd](_data), Map[VectorXd](_labels)))
+		return ndarray_copy(self.sgdptr.fit(step_size, Map[MatrixXd](_data), Map[VectorXd](_labels)))

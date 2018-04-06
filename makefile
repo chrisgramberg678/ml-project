@@ -1,5 +1,5 @@
 test: module
-	cp ml_project.so tests
+	cp ml_project*.so tests
 	make -C tests
 module:
 	python setup.py build_ext

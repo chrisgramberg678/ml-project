@@ -204,7 +204,7 @@ bool test_inverting_kernel_matrices(bool verbose=false){
 
 // unit test for when we have identical columns in KDD
 // call it KDD_stable and make a big matrix to add and remove to arbitraily
-bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold, bool verbose=true){
+bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold, bool verbose=false){
 	// create a large dictionary with some random duplicates
 	gaussian_kernel gk(.2);
 
@@ -239,33 +239,32 @@ bool inverting_inverse_with_duplicates_test(int rows, int cols, double threshold
 		// ss << "eigen inverse:\n" << Kdd.inverse() << endl << endl;
 		cout << ss.str();
 	}	
-	for(int i = 0; i < 200; ++i){
-		cout << "*******************************************************************************************************\n";
+	for(int i = 0; i < 400; ++i){
+		// cout << "*******************************************************************************************************\n";
 		int r = rand();
 		// add or remove
 		if((r % 5 || d.cols() < cols)){
-			cout << "adding ";
-			if(false){
+			// cout << "adding ";
+			if(r % 10 != 0){
 				// add something new
 				VectorXd v(rows);
 				v << nd(gen), nd(gen);
-				cout << "new value:\n";// << v << endl;
+				// cout << "new value:\n";// << v << endl;
 				d = add_col_to_dict(d, v);
 			}
 			else{
 				// add a duplicate
-				cout << "duplicate:\n";// << d.col(r % d.cols()) << endl;
+				// cout << "duplicate:\n";// << d.col(r % d.cols()) << endl;
 				d = add_col_to_dict(d, d.col(r % d.cols()));
 			}
 			// update Kdd
-			// Kdd = add_samples_to_Kdd(Kdd, d, &gk);
-			Kdd = gk.gram_matrix_stable(d,d);
+			Kdd = add_samples_to_Kdd(Kdd, d, &gk);
 			// update inverse
 			Kdd_inverse = add_cols_to_inverse(Kdd, Kdd_inverse, d, &gk);
 		}
 		else{
 			//remove
-			cout << "removing col " << r % d.cols() << endl;//":\n" << d.col(r % d.cols()) << endl;
+			// cout << "removing col " << r % d.cols() << endl;//":\n" << d.col(r % d.cols()) << endl;
 			d = remove_col_from_dict(d, r % d.cols());
 			Kdd = remove_sample_from_Kdd(Kdd, r % d.cols());
 			Kdd_inverse = remove_col_from_inverse(Kdd_inverse, r % d.cols());
@@ -298,14 +297,14 @@ bool test_inverting_with_duplicates(){
 }
 
 int main(){
-	// cout << "adding columns to samples works: " << (test_add_col_to_dict() ? "True" : "False") << endl;
-	// cout << "removing columns from dict works: " << (test_remove_col_from_dict() ? "True" : "False") << endl;
-	// cout << "inverting matrices works: " << (test_inverting_kernel_matrices() ? "True" : "False") << endl;
+	cout << "adding columns to samples works: " << (test_add_col_to_dict() ? "True" : "False") << endl;
+	cout << "removing columns from dict works: " << (test_remove_col_from_dict() ? "True" : "False") << endl;
+	cout << "inverting matrices works: " << (test_inverting_kernel_matrices() ? "True" : "False") << endl;
 	cout << "inverting with duplicates works: " << (test_inverting_with_duplicates() ? "True" : "False") << endl;
 
 	// initialization
 	// dictionary
-	/*MatrixXd d_t1(2,4);
+	MatrixXd d_t1(2,4);
 	d_t1 << 1, 2, 3, 1,
 			4, 4, 6, 4;
     VectorXd new_sample = d_t1.col(d_t1.cols()-1);
@@ -319,7 +318,7 @@ int main(){
 	// _KDD_inverse
 	MatrixXd _KDD_inverse = add_cols_to_inverse(_KDD, MatrixXd(), d_t1, &gk);
 	// error
-	double err_max = 1e-6;
+	double err_max = 1e-4;
 	// print some stuff
 	cout << "initial dictionary_t+1:\n" << d_t1 << endl << endl; 
 	cout << "initial Kernel matrix:\n" << _KDD << endl << endl;
@@ -373,5 +372,5 @@ int main(){
 		auto beta_search = beta_map.find(best_i);
 		w = beta_search->second;
 		_KDD_inverse = remove_col_from_inverse(_KDD_inverse, best_i);
-	}*/
+	}
 }
