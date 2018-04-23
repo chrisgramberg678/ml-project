@@ -44,7 +44,7 @@ class TestStochasticGradientDescent(unittest.TestCase):
 		ws = np.random.rand(self.weights,1)
 		ys = xs.dot(ws)
 		data = (xs[:self.N],ys[:self.N])
-		self.train(32,m,data)
+		self.train(50,m,data)
 		predictions = m.predict(xs[self.N:])
 		self.assertTrue(np.allclose(predictions, ys[self.N:], atol=.2))
 
@@ -55,7 +55,8 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			m = ml.blr_model()
 			train_data, train_labels, validation_data, validation_labels = test_util.read_data(str(i))
 			losses = self.train(16, m, (train_data[:self.N], train_labels[:self.N]))
-			predictions = m.predict(validation_data).flatten()
+			label_probs = m.predict(validation_data).flatten()
+			predictions = label_probs > .5
 			correct = predictions == validation_labels
 			missed = 0
 			for c in correct:
@@ -65,16 +66,17 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			self.assertTrue(missed < .15*validation_labels.size, error)
 
 	def test_stochastic_kblr(self):
-		self.weights = 1
+		self.weights = 10
 		self.epochs = 20
 		self.N = 400
 		self.step_size = 0.3
-		for i in range(3):
-			k = ml.gaussian_kernel(.1)
-			m = ml.sklr_model(k, 0, .001)
+		for i in range(0):
+			k = ml.gaussian_kernel(.2)
+			m = ml.sklr_model(k, 0, .0008)
 			train_data, train_labels, validation_data, validation_labels = test_util.read_data(str(i))
 			losses = self.train(20, m, (train_data[:self.N], train_labels[:self.N]))
-			predictions = m.predict(validation_data).flatten()
+			label_probs = m.predict(validation_data).flatten()
+			predictions = label_probs > .5
 			correct = predictions == validation_labels
 			missed = 0
 			for c in correct:

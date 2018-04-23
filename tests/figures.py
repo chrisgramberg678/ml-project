@@ -28,7 +28,7 @@ def scatter_by_class(features, labels, model=None):
 		Z.shape = xx.shape
 		plt.contour(xx, yy, Z, levels=[0])
 	plt.show()
-
+'''
 N = 400
 xtrain, ytrain, xtest, ytest = test_util.read_data("0")
 # logistic regression model, trained in batch
@@ -49,3 +49,4 @@ for e in range(epochs):
 	for i in range(0,N,batch_size):
 		weights = solver.fit(weights, .3, xtrain[i:i+batch_size], ytrain[i:i+batch_size])
 scatter_by_class(xtrain[:N], ytrain[:N], m)
+'''

@@ -18,6 +18,7 @@ cdef extern from "gradient_descent.h":
 		model() except+
 		double loss(Map[MatrixXd], Map[VectorXd]) except+
 		VectorXd predict(Map[MatrixXd]) except+
+		VectorXd get_weights() except+
 	cdef cppclass linear_least_squares_model(model):
 		linear_least_squares_model() except+
 	cdef cppclass binary_logistic_regression_model(model):
@@ -34,8 +35,8 @@ cdef extern from "gradient_descent.h":
 	cdef cppclass batch_gradient_descent(optomization_solver_base):
 		batch_gradient_descent() except+
 		batch_gradient_descent(Map[MatrixXd], Map[VectorXd], model*) except+
-		VectorXd fit(double, string, double) except+
+		void fit(double, string, double) except+
 	cdef cppclass stochastic_gradient_descent(optomization_solver_base):
 		stochastic_gradient_descent() except+
 		stochastic_gradient_descent(model*) except+
-		VectorXd fit(double, Map[MatrixXd], Map[VectorXd]) except+
+		void fit(double, Map[MatrixXd], Map[VectorXd]) except+

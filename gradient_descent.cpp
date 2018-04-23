@@ -49,7 +49,7 @@ batch_gradient_descent::batch_gradient_descent(Map<MatrixXd> X, Map<VectorXd> y,
  *         convergence_type - either "iterations", "loss_precision", "step_precision", or "none"
  *         conv - either the max iterations or the precision provided by the caller
  */
-VectorXd batch_gradient_descent::fit(double step_size, string convergence_type, double conv){
+void batch_gradient_descent::fit(double step_size, string convergence_type, double conv){
 	if(convergence_type.compare("none") != 0 && convergence_type.compare("loss_precision") != 0 && convergence_type.compare("step_precision") != 0 && convergence_type.compare("iterations") != 0){
 		throw invalid_argument("invalid convergence type: " + convergence_type);
 	}
@@ -92,7 +92,6 @@ VectorXd batch_gradient_descent::fit(double step_size, string convergence_type, 
 		step_diff = prev - next;
     	loss_diff = _loss_values[_loss_values.size() - 1] - _loss_values[_loss_values.size() - 2];
     }
-	return next;
 }
 
 /************************************************************
@@ -106,7 +105,7 @@ stochastic_gradient_descent::stochastic_gradient_descent(model* M){
 }
 
 // take some data X and labels y and return the weights after the next gradient step
-VectorXd stochastic_gradient_descent::fit(double step_size, Map<MatrixXd> X, Map<VectorXd> y){
+void stochastic_gradient_descent::fit(double step_size, Map<MatrixXd> X, Map<VectorXd> y){
 	if(_model->parametric()){
 		// cout << "parametric\n";
 		// if the model weights haven't been initialized yet initialize based on the number of features in X
@@ -120,7 +119,6 @@ VectorXd stochastic_gradient_descent::fit(double step_size, Map<MatrixXd> X, Map
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
 		_loss_values.push_back(loss);
-		return result;
 	}
 	else{
 		// first compute the functional gradient given X and y
@@ -147,6 +145,5 @@ VectorXd stochastic_gradient_descent::fit(double step_size, Map<MatrixXd> X, Map
 		// calculate the loss and add it to _loss_values
 		double loss = _model->loss(X, y);
 		_loss_values.push_back(loss);
-		return result;
 	}		
 }
