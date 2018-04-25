@@ -1,5 +1,4 @@
 import unittest
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import bernoulli
 import ml_project as ml

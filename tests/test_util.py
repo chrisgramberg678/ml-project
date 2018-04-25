@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def read_test_data_to_list(filename):
 	with open(filename) as f:

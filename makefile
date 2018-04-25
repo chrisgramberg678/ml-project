@@ -4,4 +4,4 @@ test: module
 module:
 	python setup.py build_ext
 clean:
-	rm ml_project.so
+	rm ml_project*.so
