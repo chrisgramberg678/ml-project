@@ -4,37 +4,19 @@ This library implements batch gradient descent and stochastic gradient descent f
 
 ## Installation
 
-This library has several dependencies. To start make sure you have the universe repository enabled:
-
-`sudo apt-add-repository universe`
-
-Now update:
-
-`sudo apt-get update`
-
-If you're installing to a usb or cd (or a vm emulating a usb or cd) you may encouter an error which looks something like: `Possible error ** (appstreamcli:9372): CRITICAL **: Error while moving old database out of the way.`
-
-This can be solved using the command: `sudo chmod -R a+rX,u+w /var/cache/app-info/xapian/default`
-
-and an explantion can be found [here](https://askubuntu.com/questions/761592/unable-to-apt-get-dist-upgrade-on-a-persistent-ubuntu-16-04-usb)
-
-Next you'll need git `sudo apt install git`
-
-so you can clone this repo: `git clone https://github.com/chrisgramberg678/ml-project.git` 
+This library has several dependencies, all of which can be installed via pip
 
 ### Pip and Python dependencies
 
-Install pip using `sudo apt-get install python-pip` 
+Install numpy, scipy, cython, and eigency using `pip install numpy scipy cython eigency` (this may require sudo)
 
-and make sure it's updated to the latest version using: `pip install --upgrade pip`
-
-Then install numpy, scipy, and cython using `pip install numpy scipy cython` (this may require sudo)
-
-We'll also need matplotlib for the included test file: `sudo apt install python-matplotlib`
+We also use matplotlib to create various figures so if you want to use those you'll need matplotlib as well.
 
 ### Installing Eigen
 
-First we'll need cmake: `sudo apt install cmake`
+If you'd like to compile the C++ portions of this library on their own you'll need to include the path to the eigen header files. This can be done by installing eigen as described below or by using the version of Eigen provided by eigency. To find the path to eigen from eigency open a python terminal and `import eigency` and call `eigency.get_includes()`. 
+
+To install eigen manually we'll need cmake: `sudo apt install cmake`
 
 Then, go download the latest version of [Eigen](https://eigen.tuxfamily.org).
 
@@ -52,6 +34,8 @@ sudo make install
 To use this as a Python module compile it using the command: 
 
 `make module`
+
+If you don't want to use make you can also just run `python stepup.py build_ext`
 
 This will create ml_project.so which can be imported into Python using `import ml_project as ml`.
 
