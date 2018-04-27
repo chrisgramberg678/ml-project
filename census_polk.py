@@ -34,6 +34,7 @@ def train_POLK(step_size, sigma, eps, epochs, data):
         np.random.seed(seed)
         np.random.shuffle(train_labels)
         flag = 0
+        prev_size = 0
         for i in range(0, train_data.shape[0], BS):
             start = time.time()
             sgd.fit(step_size, train_data[i:i+BS], train_labels[i:i+BS])
@@ -54,14 +55,15 @@ def train_POLK(step_size, sigma, eps, epochs, data):
             correct = (predictions == test_labels).sum()
             test_errors.append(1 - (correct/(test_labels.shape[0])))
             # add the current model order
-            model_orders.append(model.dictionary().shape[0])
-            # if the model is accepting all of the values we give it epsilon is so low that
-            # the model_order = N and we'll terminate early
-            if model.dictionary().shape[0] == i + BS:
+            model_order = model.dictionary().shape[0]
+            model_orders.append(model_order)
+            # if the model is accepting all of the values we gave it epsilon is too low - terminate early
+            if prev_size + BS == model_order:
                 if flag > 4:
                     raise Exception('eps too low')
-                print('model order: ',model.dictionary().shape[0])
+                print('model order: ', model_order)
                 flag += 1
+            prev_size = model_order
 
         epoch_end = time.time()
         # print('time to run epoch: {} seconds'.format(epoch_end - epoch_start))
@@ -73,9 +75,9 @@ def train_POLK(step_size, sigma, eps, epochs, data):
 census_polk_stats = {}
 
 # we'll use 4 different values of epsilon for each step size,
-# these values were found by manual exploration
+# these values were found by manual exploration when sigma = .5
 epsilons_map = {
-    1 : np.linspace(.00253, .0026, 4),
+    1 : np.linspace(.0025, .003, 4),
     .5 : np.linspace(6e-4, 7e-4, 4),
     .3 : np.linspace(2e-4, 5e-4, 4),
     .1 : np.linspace(2e-5, 5e-5, 4),
@@ -89,7 +91,7 @@ epsilons_map = {
     .00001 : np.linspace(2e-13, 2e-12, 4)
 }
 
-sigmas = np.linspace(.2,1,5)
+sigmas = [.5]
 for sigma in sigmas:
     for step_size in step_sizes:
         epsilons = epsilons_map[step_size]
