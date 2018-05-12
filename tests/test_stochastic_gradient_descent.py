@@ -28,10 +28,6 @@ class TestStochasticGradientDescent(unittest.TestCase):
 			np.random.shuffle(ytrain)
 			for i in range(0, self.N, batch_size):
 				solver.fit(self.step_size, Xtrain[i:i+batch_size], ytrain[i:i+batch_size])
-			# update the loss 
-			prev_loss = next_loss
-			next_loss = solver.get_loss_values()[-1]
-			# print("epoch: {}. loss: {}".format(e, np.mean(solver.get_loss_values())))
 		return solver.get_loss_values()
 
 	def test_lls(self):
@@ -69,11 +65,11 @@ class TestStochasticGradientDescent(unittest.TestCase):
 		self.epochs = 20
 		self.N = 400
 		self.step_size = 0.3
-		for i in range(0):
-			k = ml.gaussian_kernel(.2)
-			m = ml.sklr_model(k, 0, .0008)
+		for i in range(3):
+			k = ml.gaussian_kernel(.4)
+			m = ml.sklr_model(k, 1e-9, .0005)
 			train_data, train_labels, validation_data, validation_labels = test_util.read_data(str(i))
-			losses = self.train(20, m, (train_data[:self.N], train_labels[:self.N]))
+			losses = self.train(10, m, (train_data[:self.N], train_labels[:self.N]))
 			label_probs = m.predict(validation_data).flatten()
 			predictions = label_probs > .5
 			correct = predictions == validation_labels

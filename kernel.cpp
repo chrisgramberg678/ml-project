@@ -40,14 +40,25 @@ MatrixXd kernel::gram_matrix_stable(Map<MatrixXd> &X, Map<MatrixXd> &Y){
 MatrixXd kernel::gram_matrix_stable(const MatrixXd &X, const MatrixXd &Y){
 	// this value is necessary to avoid getting inf and nan when inverting a gram_matrix where x and y share values
 	double stability = 1e-3;
-	if(X.cols() != 1 && Y.cols() != 1){
-		return gram_matrix(X, Y) + (stability * MatrixXd::Identity(X.cols(), Y.cols()));
+	MatrixXd result = gram_matrix(X, Y);
+	// if the result is a 1x1 matrix
+	if(result.size() == 1 && result(0, 0) == 1){
+		// cout << "1x1\n";
+		result(0, 0) = result(0, 0) + stability;
+		return result;
+	}
+	// the result is NXM where N > 1 and M > 1
+	else if(result.rows() > 1 && result.cols() > 1){
+		// cout << "normal\n";
+		return result + (stability * MatrixXd::Identity(X.cols(), Y.cols()));
+	}
+	// if the result is a column matrix
+	else if((result.cols() == 1 || result.rows() == 1) && result(result.size()-1) == 1){
+		// cout << "column/row\n";
+		result(result.size() - 1) += stability;
+		return result;
 	}
 	else{
-		MatrixXd result = gram_matrix(X, Y);
-		if(result(result.size() - 1, 0) == 1){
-			result(result.size() - 1, 0) = result(result.size() - 1, 0) + stability;
-		}
 		return result;
 	}
 }

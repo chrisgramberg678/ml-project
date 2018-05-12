@@ -97,7 +97,7 @@ sigma = .2
 stats = {}
 # how much to train
 epochs = 10
-batch_size = 1
+batch_size = 10
 step_size = .3
 kernel = ml.gaussian_kernel(sigma)
 for err in errs:
@@ -124,6 +124,8 @@ for err in errs:
 			correct = (predictions == test_y).sum()
 			test_errors.append(1 - (correct/(test_y.shape[0])))
 			model_orders.append(model.dictionary().shape[0])
+			# if(model_orders[-1] > 1):
+			# 	print(model_orders[-1])
 		# print('test acc: {}/{}'.format(correct,test_y.shape[0]))
 		print('model order: ',model.dictionary().shape[0])
 	# save all of this keyed by the err

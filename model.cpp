@@ -264,10 +264,8 @@ void stochastic_kernel_logistic_regression_model::update_KDD_inverse(){
 		// add a single row and column
 		else{
 			// create some intermediary values
-			// cout << "cols vs sample\n";
-			VectorXd u1 = _k->gram_matrix_stable(_dictionary.leftCols(c), _dictionary.col(c));
+			VectorXd u1 = _k->gram_matrix(_dictionary.leftCols(c), _dictionary.col(c));
 			VectorXd u2 = _KDD_inverse * u1;
-			// cout << "sample vs sample\n";
 			double d = 1/(_k->gram_matrix_stable(_dictionary.col(c), _dictionary.col(c)).value() - (u1.transpose() * u2).value());
 			VectorXd u3 = d * u2;
 			MatrixXd top_left = _KDD_inverse + d * u2 * u2.transpose();
@@ -343,27 +341,21 @@ MatrixXd stochastic_kernel_logistic_regression_model::remove_sample_from_inverse
 
 void stochastic_kernel_logistic_regression_model::prune_dictionary(){
 	while(_dictionary.cols() > 1){
-	// for(int j = 0; j < _dictionary.cols(); ++j){
 		map<int, double> err_map;
 		map<int, VectorXd> beta_map;
 		// compute the error if each value was excluded
-		// cout << "**************\nj = " << j << "\nd:\n" << _dictionary << "\nw:\n" << _weights << endl; 
-		// cout << "**************\nd.cols() = " << _dictionary.cols() << "\nd:\n" << _dictionary << "\nw:\n" << _weights << endl; 
+		MatrixXd diff = (_KDD * _KDD_inverse) - MatrixXd::Identity(_KDD.rows(), _KDD.cols());
 		for(int i = 0; i < _dictionary.cols(); i++){
-			// cout << "\ni: " << i << endl;
 			// remove the ith value from the dictionary and recompute the kernel matrix and its inverse
 			MatrixXd d_temp = remove_col_from_dict(_dictionary, i);
 			MatrixXd _KDD_temp = remove_sample_from_Kdd(_KDD, i);
 			MatrixXd _KDD_inverse_temp = remove_sample_from_inverse(_KDD_inverse, i);
 			MatrixXd _KDd_temp = _k->gram_matrix(_dictionary, d_temp);
 			VectorXd beta = (_weights.transpose() * _KDd_temp * _KDD_inverse_temp);
-			double residual_error = (_weights.transpose() * _KDD * _weights).value() + 
-									(beta.transpose() * _KDD_temp * beta).value() - 
-									2 * (_weights.transpose() * _KDd_temp * beta).value();
-			// cout << "error = " << first_term << " + " << second_term << " - " <<  third_term << endl;
-			// cout << "d_temp:\n" << d_temp << endl;
-			// cout << "beta:\n" << beta << endl;
-			// cout << "residual_error: " << residual_error << endl;
+			double first_term = (_weights.transpose() * _KDD * _weights).value();
+			double second_term = (beta.transpose() * _KDD_temp * beta).value();
+			double third_term = 2 * (_weights.transpose() * _KDd_temp * beta).value();
+			double residual_error = first_term + second_term - third_term;
 			err_map.insert({i, residual_error});
 			beta_map.insert({i, beta});
 		}
@@ -378,11 +370,8 @@ void stochastic_kernel_logistic_regression_model::prune_dictionary(){
 			}
 		}
 		if (err_best > _err_max){
-			// cout << "err_best: " << err_best << " not better than err_max: " << _err_max << endl;
 			break;
 		}
-		// cout << "best_i: " << best_i << endl;
-		// cout << "err_best: " << err_best << endl;
 		// update dictionary
 		_dictionary = remove_col_from_dict(_dictionary, best_i);
 		// update weights
