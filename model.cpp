@@ -340,18 +340,25 @@ MatrixXd stochastic_kernel_logistic_regression_model::remove_sample_from_inverse
 }
 
 void stochastic_kernel_logistic_regression_model::prune_dictionary(){
-	while(_dictionary.cols() > 1){
+	// the kernel matrix, inverse, and dictioanry to iteratively remove from
+	MatrixXd _KDD_t = _KDD;
+	MatrixXd _KDD_inverse_t = _KDD_inverse;
+	MatrixXd _dictionary_t = _dictionary;
+	VectorXd _weights_t = _weights;
+
+	while(_dictionary_t.cols() > 1){
 		map<int, double> err_map;
 		map<int, VectorXd> beta_map;
 		// compute the error if each value was excluded
-		MatrixXd diff = (_KDD * _KDD_inverse) - MatrixXd::Identity(_KDD.rows(), _KDD.cols());
-		for(int i = 0; i < _dictionary.cols(); i++){
+		for(int i = 0; i < _dictionary_t.cols(); i++){
 			// remove the ith value from the dictionary and recompute the kernel matrix and its inverse
-			MatrixXd d_temp = remove_col_from_dict(_dictionary, i);
-			MatrixXd _KDD_temp = remove_sample_from_Kdd(_KDD, i);
-			MatrixXd _KDD_inverse_temp = remove_sample_from_inverse(_KDD_inverse, i);
+			MatrixXd d_temp = remove_col_from_dict(_dictionary_t, i);
+			MatrixXd _KDD_temp = remove_sample_from_Kdd(_KDD_t, i);
+			MatrixXd _KDD_inverse_temp = remove_sample_from_inverse(_KDD_inverse_t, i);
+			// kernel of the current dictionary with the one from inside this loop
 			MatrixXd _KDd_temp = _k->gram_matrix(_dictionary, d_temp);
-			VectorXd beta = (_weights.transpose() * _KDd_temp * _KDD_inverse_temp);
+			VectorXd beta = (_weights_t.transpose() * _KDd_temp * _KDD_inverse_temp);
+			// compare to the current value of f, as if we haven't removed anything
 			double first_term = (_weights.transpose() * _KDD * _weights).value();
 			double second_term = (beta.transpose() * _KDD_temp * beta).value();
 			double third_term = 2 * (_weights.transpose() * _KDd_temp * beta).value();
@@ -362,25 +369,33 @@ void stochastic_kernel_logistic_regression_model::prune_dictionary(){
 		// find the i that gave the smallest error
 		double err_best = 100000;
 		int best_i = -1;
-		for(int i = 0; i < _dictionary.cols(); i++){
+		for(int i = 0; i < _dictionary_t.cols(); i++){
 			auto err_search = err_map.find(i);
 			if(err_search->second < err_best){
 				best_i = err_search->first;
 				err_best = err_search->second;
 			}
 		}
-		if (err_best > _err_max){
-			break;
-		}
+		if (err_best <= _err_max){
 		// update dictionary
-		_dictionary = remove_col_from_dict(_dictionary, best_i);
+		_dictionary_t = remove_col_from_dict(_dictionary_t, best_i);
 		// update weights
 		auto beta_search = beta_map.find(best_i);
-		_weights = beta_search->second;
+		_weights_t = beta_search->second;
 		// update kernel matrix and inverse
-		_KDD = remove_sample_from_Kdd(_KDD, best_i);
-		_KDD_inverse = remove_sample_from_inverse(_KDD_inverse, best_i);
+		_KDD_t = remove_sample_from_Kdd(_KDD_t, best_i);
+		_KDD_inverse_t = remove_sample_from_inverse(_KDD_inverse_t, best_i);
+		}
+		else{
+			break;
+		}
 	}
+
+	// update the model's internal dictioanry, weights, kernel matrix, and inverse
+	_dictionary = _dictionary_t;
+	_weights = _weights_t;
+	_KDD = _KDD_t;
+	_KDD_inverse = _KDD_inverse_t;
 }
 
 double stochastic_kernel_logistic_regression_model::loss(MatrixXd X, VectorXd y){
